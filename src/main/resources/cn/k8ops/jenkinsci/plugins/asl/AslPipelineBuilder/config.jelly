@@ -1,0 +1,24 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+
+  <script><![CDATA[
+    var YamlMatrixExecutionStrategy = {
+      // ref. https://issues.jenkins-ci.org/browse/JENKINS-15604
+      cmChange: function(editor, change){
+        editor.save();
+        $$('.validated').forEach(function (e) {e.onchange()})
+      }
+    }
+  ]]></script>
+
+  <f:entry title="Pipeline Yaml" field="pipelineContent">
+    <f:textarea default="" codemirror-mode="yaml" codemirror-config="mode: 'text/x-yaml', onChange: YamlMatrixExecutionStrategy.cmChange" />
+  </f:entry>
+
+  <f:entry title="Run Steps" field="steps">
+    <f:expandableTextbox name="runPipeline" />
+  </f:entry>
+  <f:entry title="Properties" field="properties">
+    <f:expandableTextbox name="properties" />
+  </f:entry>
+</j:jelly>
