@@ -11,7 +11,7 @@
     }
   ]]></script>
 
-  <f:entry title="Pipeline Yaml" field="pipelineContent">
+  <f:entry title="Pipeline Yaml" field="pipelineConfig">
     <f:textarea default="" codemirror-mode="yaml" codemirror-config="mode: 'text/x-yaml', onChange: YamlMatrixExecutionStrategy.cmChange" />
   </f:entry>
 
