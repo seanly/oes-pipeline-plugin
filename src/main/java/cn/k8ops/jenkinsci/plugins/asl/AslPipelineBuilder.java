@@ -12,7 +12,6 @@ import lombok.Getter;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
-import java.io.IOException;
 import java.io.PrintStream;
 
 public class AslPipelineBuilder extends Builder implements SimpleBuildStep {

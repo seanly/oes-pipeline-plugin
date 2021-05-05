@@ -16,7 +16,7 @@
   </f:entry>
 
   <f:entry title="Run Steps" field="steps">
-    <f:expandableTextbox name="runPipeline" />
+    <f:expandableTextbox name="steps" />
   </f:entry>
   <f:entry title="Properties" field="properties">
     <f:expandableTextbox name="properties" />
