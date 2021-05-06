@@ -15,9 +15,6 @@
     <f:textarea default="" codemirror-mode="yaml" codemirror-config="mode: 'text/x-yaml', onChange: YamlMatrixExecutionStrategy.cmChange" />
   </f:entry>
 
-  <f:entry title="Run Steps" field="steps">
-    <f:expandableTextbox name="steps" />
-  </f:entry>
   <f:entry title="Properties" field="properties">
     <f:expandableTextbox name="properties" />
   </f:entry>

@@ -9,7 +9,6 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.tasks._ant.AntConsoleAnnotator;
 import hudson.util.ArgumentListBuilder;
-import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -34,16 +33,12 @@ public class AslPipelineBuilder extends Builder implements SimpleBuildStep {
     private String pipelineConfig;
 
     @Getter
-    private String steps;
-
-    @Getter
     private String properties;
 
     @DataBoundConstructor
     public AslPipelineBuilder(String pipelineConfig, String steps, String properties) {
         this.pipelineConfig = pipelineConfig;
         this.properties = properties;
-        this.steps = steps;
     }
 
     @DataBoundSetter
@@ -58,10 +53,10 @@ public class AslPipelineBuilder extends Builder implements SimpleBuildStep {
         PrintStream logger = listener.getLogger();
         String ymlPath = ".ant.yml";
 
+        FilePath configFile = new FilePath(ws, ymlPath);
         if (StringUtils.isNotBlank(pipelineConfig)) {
             logger.println("--// start save pipeline config to file");
 
-            FilePath configFile = new FilePath(ws, ymlPath);
             if (!configFile.getParent().exists()) {
                 configFile.mkdirs();
             }
@@ -72,20 +67,25 @@ public class AslPipelineBuilder extends Builder implements SimpleBuildStep {
             throw new AbortException("pipeline configure is empty");
         }
 
+        logger.println("--// save properties file");
+        FilePath propsFile = new FilePath(ws, ".ci/jenkins.properties");
+        if(!propsFile.getParent().exists()) {
+            propsFile.getParent().mkdirs();
+        }
+        propsFile.write(env.expand(properties), "UTF-8");
+        logger.println("--// save ok");
+
         logger.println("--// run asl pipeline...");
 
-        //String runSteps = env.expand(steps);
-
-        copyAntAsl(ws);
-
-        FilePath aslDir = new FilePath(ws, ".asl");
-
+        FilePath aslDir = copyAntAsl(ws);
         ArgumentListBuilder args = new ArgumentListBuilder();
         args.add(String.format("%s/tools/ant/bin/ant", aslDir.getRemote()));
         args.add("-f");
         args.add(String.format("%s/run.xml", aslDir.getRemote()));
         args.add("pipeline");
-        args.add("-Dpipeline.file=.ant.yml");
+        args.add(String.format("-Dpipeline.file=%s", configFile.getRemote()));
+        args.add("-propertyfile");
+        args.add(propsFile.getRemote());
         args.add("-logger");
         args.add("org.apache.tools.ant.NoBannerLogger");
 
@@ -142,7 +142,6 @@ public class AslPipelineBuilder extends Builder implements SimpleBuildStep {
                 return null;
             }
         }
-
 
         @Override public OutputStream decorateLogger(final AbstractBuild build, final OutputStream logger) throws IOException, InterruptedException {
             return new LineTransformationOutputStream() {
@@ -219,15 +218,22 @@ public class AslPipelineBuilder extends Builder implements SimpleBuildStep {
 
 
     @SneakyThrows
-    private void copyAntAsl(FilePath ws) {
+    private FilePath copyAntAsl(FilePath ws) {
 
-        File antAslDir = new File(Jenkins.get().getRootDir(), "ant-asl");
+        String aslRoot = System.getProperty("asl.root");
+        if (!StringUtils.isNotBlank(aslRoot)) {
+            throw new AbortException("--// 启动的时候没有配置-Dasl.root=/path/to/ant-asl变量");
+        }
+
+        File antAslDir = new File(aslRoot);
         FilePath antAslFilePath = new FilePath(antAslDir);
         FilePath dotAslFilePath = new FilePath(ws, ".asl");
         if (!dotAslFilePath.exists()) {
             dotAslFilePath.mkdirs();
         }
         antAslFilePath.copyRecursiveTo(dotAslFilePath);
+
+        return dotAslFilePath;
     }
 
     public DescriptorImpl getDescriptor() {
