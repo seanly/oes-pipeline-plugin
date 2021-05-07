@@ -36,7 +36,7 @@ public class AslPipelineBuilder extends Builder implements SimpleBuildStep {
     private String properties;
 
     @DataBoundConstructor
-    public AslPipelineBuilder(String pipelineConfig, String steps, String properties) {
+    public AslPipelineBuilder(String pipelineConfig, String properties) {
         this.pipelineConfig = pipelineConfig;
         this.properties = properties;
     }
