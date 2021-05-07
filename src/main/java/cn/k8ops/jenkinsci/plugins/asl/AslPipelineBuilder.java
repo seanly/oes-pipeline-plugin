@@ -18,20 +18,21 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 
+import static cn.k8ops.jenkinsci.plugins.asl.AslPipelineConfigFromWorkspace.DEFAULT_PIPELINE_FILE;
 import static cn.k8ops.jenkinsci.plugins.asl.AslRunner.DOT_CI_DIR;
 import static cn.k8ops.jenkinsci.plugins.asl.AslRunner.JENKINS_DOT_PROPS;
 
 public class AslPipelineBuilder extends Builder implements SimpleBuildStep {
 
     @Getter
-    private String pipelineConfig;
+    private AslPipelineConfigProvider provider;
 
     @Getter
     private String properties;
 
     @DataBoundConstructor
-    public AslPipelineBuilder(String pipelineConfig, String properties) {
-        this.pipelineConfig = pipelineConfig;
+    public AslPipelineBuilder(AslPipelineConfigProvider provider, String properties) {
+        this.provider = provider;
         this.properties = properties;
     }
 
@@ -45,23 +46,31 @@ public class AslPipelineBuilder extends Builder implements SimpleBuildStep {
                         @NonNull Launcher launcher, @NonNull TaskListener listener) throws IOException, InterruptedException {
 
         PrintStream logger = listener.getLogger();
-        String ymlPath = ".ant.yml";
 
-        FilePath pipelineConfigFile = new FilePath(ws, ymlPath);
-        if (StringUtils.isNotBlank(pipelineConfig)) {
-            logger.println("--// start save pipeline config to file");
+        String pipelineConfigPath;
 
-            if (!pipelineConfigFile.getParent().exists()) {
-                pipelineConfigFile.mkdirs();
+        if (provider instanceof AslPipelineConfigFromJenkins) {
+            AslPipelineConfigFromJenkins fromJenkins = (AslPipelineConfigFromJenkins) provider;
+            pipelineConfigPath = DEFAULT_PIPELINE_FILE;
+
+            FilePath configFile = new FilePath(ws, pipelineConfigPath);
+
+            if (!configFile.getParent().exists()) {
+                configFile.getParent().mkdirs();
             }
 
-            pipelineConfigFile.write(pipelineConfig, "UTF-8");
-            logger.println("--// save ok");
+            String content = fromJenkins.getContent();
+            if (StringUtils.isNotBlank(content)) {
+                configFile.write(content, "UTF-8");
+            } else {
+                throw new AbortException("configure is empty");
+            }
+        } else if (provider instanceof AslPipelineConfigFromWorkspace) {
+            AslPipelineConfigFromWorkspace fromWs = (AslPipelineConfigFromWorkspace) provider;
+            pipelineConfigPath = fromWs.getFile();
         } else {
-            throw new AbortException("pipeline configure is empty");
+            throw new AbortException("configure provider is not support");
         }
-
-        logger.println("--// save jenkins.properties file");
 
         FilePath jenkinsPropsFile = new FilePath(ws, DOT_CI_DIR + File.separator + JENKINS_DOT_PROPS);
 
@@ -69,13 +78,12 @@ public class AslPipelineBuilder extends Builder implements SimpleBuildStep {
             jenkinsPropsFile.getParent().mkdirs();
         }
         jenkinsPropsFile.write(env.expand(properties), "UTF-8");
-        logger.println("--// save ok");
 
         logger.println("--// run asl pipeline...");
 
         AslRunner runner = new AslRunner(run,ws, launcher, listener);
         runner.setEnvvars(env);
-        boolean r = runner.runPipeline(pipelineConfigFile, jenkinsPropsFile);
+        boolean r = runner.runPipeline(new FilePath(ws, pipelineConfigPath), jenkinsPropsFile);
 
         if (r) {
             run.setResult(Result.SUCCESS);
