@@ -93,7 +93,7 @@ public class AslRunner extends CLIRunner{
     }
 
     @SneakyThrows
-    private void copyAntAsl() {
+    public void copyAntAsl() {
 
         File antAslDir = new File(getAslRoot());
         FilePath antAslFilePath = new FilePath(antAslDir);
