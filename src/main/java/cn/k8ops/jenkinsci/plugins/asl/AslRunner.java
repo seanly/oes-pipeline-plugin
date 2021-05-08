@@ -83,13 +83,19 @@ public class AslRunner extends CLIRunner{
     }
 
     @SneakyThrows
-    private void copyAntAsl() {
+    public static String getAslRoot() {
         String aslRoot = System.getProperty("asl.root");
         if (!StringUtils.isNotBlank(aslRoot)) {
             throw new AbortException("--// 启动的时候没有配置-Dasl.root=/path/to/ant-asl变量");
         }
 
-        File antAslDir = new File(aslRoot);
+        return aslRoot;
+    }
+
+    @SneakyThrows
+    private void copyAntAsl() {
+
+        File antAslDir = new File(getAslRoot());
         FilePath antAslFilePath = new FilePath(antAslDir);
         FilePath dotAslFilePath = new FilePath(getWs(), DOT_ASL_DIR);
         if (!dotAslFilePath.exists()) {
