@@ -143,7 +143,7 @@ public class AslRunner extends CLIRunner{
             }
 
             if (stage.getAfterSteps().size() != 0) {
-                boolean ret2 = runTasks(stage.getAfterSteps());
+                boolean ret2 = runSteps(stage.getAfterSteps());
                 if (ret) {
                     ret = ret2;
                 }
@@ -158,7 +158,7 @@ public class AslRunner extends CLIRunner{
         return ret;
     }
 
-    private boolean runTasks(List<Step> steps) {
+    private boolean runSteps(List<Step> steps) {
         for(Step step : steps) {
             if(!runStep(step)) {
                 return false;
