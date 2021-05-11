@@ -14,7 +14,7 @@ import hudson.tasks._ant.AntConsoleAnnotator;
 import hudson.util.ArgumentListBuilder;
 import lombok.Getter;
 import lombok.Setter;
-import org.jenkinsci.plugins.credentialsbinding.masking.SecretPatterns;
+import org.jenkinsci.plugins.credentialsbinding.masking.SecretPatternFactory;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class CLIRunner {
 
@@ -133,10 +134,36 @@ public class CLIRunner {
         return args;
     }
 
-
     @Setter
     private  Map<Run<?, ?>, Collection<String>> secretsForBuild = new WeakHashMap<>();
 
+    private static class SecretPatterns {
+
+        private static final Comparator<String> BY_LENGTH_DESCENDING =
+                Comparator.comparingInt(String::length).reversed().thenComparing(String::compareTo);
+
+        /**
+         * Constructs a regular expression to match against all known forms that the given collection of input strings may
+         * appear. This pattern is optimized such that longer masks are checked before shorter masks. By doing so, this
+         * makes inputs that are substrings of other inputs be masked as the longer input, though there is no guarantee
+         * this will work in every possible situation. Another consequence of this ordering is that inputs that require
+         * quoting will be masked before a substring of the input was matched, thus avoiding leakage of information.
+         * For example, {@code bash -x} will only quote arguments echoed when necessary. To avoid leaking the presence or
+         * absence of quoting, the longer form is masked.
+         */
+        public static @Nonnull Pattern getAggregateSecretPattern(@Nonnull Collection<String> inputs) {
+            String pattern = inputs.stream()
+                    .filter(input -> !input.isEmpty())
+                    .flatMap(input ->
+                            SecretPatternFactory.all().stream().flatMap(factory ->
+                                    factory.getEncodedForms(input).stream()))
+                    .sorted(BY_LENGTH_DESCENDING)
+                    .distinct()
+                    .map(Pattern::quote)
+                    .collect(Collectors.joining("|"));
+            return Pattern.compile(pattern);
+        }
+    }
 
     /** Similar to {@code MaskPasswordsOutputStream}. */
     private static final class Filter extends ConsoleLogFilter {
@@ -144,7 +171,6 @@ public class CLIRunner {
         private final String charsetName;
 
         private Map<Run<?, ?>, Collection<String>> secretsForBuild = new WeakHashMap<Run<?, ?>, Collection<String>>();
-
 
         Filter(String charsetName, Map<Run<?, ?>, Collection<String>> secretsForBuild) {
             this.charsetName = charsetName;
@@ -165,7 +191,6 @@ public class CLIRunner {
                 return null;
             }
         }
-
 
         @Override public OutputStream decorateLogger(final AbstractBuild build, final OutputStream logger) throws IOException, InterruptedException {
             return new LineTransformationOutputStream() {
