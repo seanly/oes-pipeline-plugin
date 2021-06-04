@@ -49,7 +49,7 @@ public class AslRunner extends CLIRunner{
     @SneakyThrows
     public boolean runPipeline(FilePath pipelineConfigFile, FilePath jenkinsPropsFile) {
 
-        Config config = Config.parse(pipelineConfigFile.getRemote());
+        Config config = Config.parse(pipelineConfigFile.readToString());
 
         Properties jenkinsProps = new Properties();
         jenkinsProps.load(jenkinsPropsFile.read());
@@ -94,6 +94,7 @@ public class AslRunner extends CLIRunner{
 
     @SneakyThrows
     public void copyAntAsl() {
+        getLogger().println("--//copy ant-asl tool....");
 
         File antAslDir = new File(getAslRoot());
         FilePath antAslFilePath = new FilePath(antAslDir);

@@ -4,8 +4,6 @@ import lombok.Data;
 import lombok.SneakyThrows;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,17 +25,15 @@ public class Config {
     private List<Stage> stages = new ArrayList<>();
 
     private Map<String, String> environment;
-    private File configFile = null;
 
     @SneakyThrows
-    Config(File configFile) {
-        this.configFile = configFile;
-        this.rawConfig = new Yaml().load(new FileInputStream(configFile));
+    Config(String config) {
+        this.rawConfig = new Yaml().load(config);
     }
 
     @SneakyThrows
-    public static Config parse(String configPath) {
-        Config config = new Config(new File(configPath));
+    public static Config parse(String rawConfig) {
+        Config config = new Config(rawConfig);
         config.parseEnvironment();
         config.parsePipeline();
         return config;
