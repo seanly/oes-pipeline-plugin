@@ -25,6 +25,11 @@ public class Step {
     @SneakyThrows
     public static Step parse(Object  rawConfig, Map<String, String> environment) {
         Step step = null;
+        /**
+         * v2 step format
+         *
+         * - maven
+         */
         if (rawConfig instanceof String) {
             step = new Step((String)rawConfig);
         }
@@ -56,7 +61,7 @@ public class Step {
                 }
             } else {
                 /**
-                 * v1 task format
+                 * v1 step format
                  * - step.id: maven
                  *   goal: clean package
                  *   options: -Dmaven.test.skip=true
