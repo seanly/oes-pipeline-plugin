@@ -5,6 +5,7 @@ import cn.k8ops.jenkinsci.plugins.asl.pipeline.ConfigException;
 import cn.k8ops.jenkinsci.plugins.asl.pipeline.Stage;
 import cn.k8ops.jenkinsci.plugins.asl.pipeline.Step;
 import hudson.AbortException;
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
@@ -126,9 +127,17 @@ public class AslRunner extends CLIRunner{
         try {
 
             // bind envvars data
-            Map<String, String> localEnvvars = getEnvvars();
-            Map<String, String> absEnvvars = bind(stage.getEnvironment());
-            localEnvvars.putAll(absEnvvars);
+            EnvVars localEnvvars = getEnvvars();
+
+            Map<String, String> stageEnvirons = stage.getEnvironment();
+            // 实现环境变量的引用
+            for(String key: stageEnvirons.keySet()) {
+                String value = localEnvvars.expand(stageEnvirons.get(key));
+                stageEnvirons.put(key, value);
+                localEnvvars.put(key, value);
+            }
+
+            localEnvvars.putAll(bind(stageEnvirons));
             setEnvvars(localEnvvars);
 
             if (!stage.shouldRun(localEnvvars)) {
