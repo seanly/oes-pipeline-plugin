@@ -46,7 +46,7 @@ public class AslPipelineStep extends BasicStep{
 
     @Getter
     @DataBoundSetter
-    private String properties;
+    private String environs;
 
     @DataBoundConstructor
     public AslPipelineStep(String from) {
@@ -115,7 +115,7 @@ public class AslPipelineStep extends BasicStep{
                     throw new AbortException("from type is not support");
                 }
 
-                AslPipelineBuilder builder = new AslPipelineBuilder(provider, step.properties);
+                AslPipelineBuilder builder = new AslPipelineBuilder(provider, step.environs);
                 builder.perform(run, ws, envVars, launcher, listener);
 
                 if (run.getResult() == Result.FAILURE && failOnError) {

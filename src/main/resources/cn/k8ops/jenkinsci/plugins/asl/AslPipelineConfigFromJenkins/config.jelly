@@ -11,7 +11,7 @@
     }
   ]]></script>
 
-  <f:entry title="Yml Conf" field="content">
+  <f:entry title="Configure" field="content">
     <f:textarea default="---" codemirror-mode="yaml" codemirror-config="mode: 'text/x-yaml', onChange: YamlMatrixExecutionStrategy.cmChange" />
   </f:entry>
 

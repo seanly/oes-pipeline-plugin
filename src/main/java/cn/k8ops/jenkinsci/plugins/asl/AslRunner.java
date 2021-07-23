@@ -4,10 +4,7 @@ import cn.k8ops.jenkinsci.plugins.asl.pipeline.Config;
 import cn.k8ops.jenkinsci.plugins.asl.pipeline.ConfigException;
 import cn.k8ops.jenkinsci.plugins.asl.pipeline.Stage;
 import cn.k8ops.jenkinsci.plugins.asl.pipeline.Step;
-import hudson.AbortException;
-import hudson.EnvVars;
-import hudson.FilePath;
-import hudson.Launcher;
+import hudson.*;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.model.Run;
@@ -48,16 +45,13 @@ public class AslRunner extends CLIRunner{
     }
 
     @SneakyThrows
-    public boolean runPipeline(FilePath pipelineConfigFile, FilePath jenkinsPropsFile) {
+    public boolean runPipeline(FilePath pipelineConfigFile, Map<String, String> paramEnvirons) {
 
         Config config = Config.parse(pipelineConfigFile.readToString());
 
-        Properties jenkinsProps = new Properties();
-        jenkinsProps.load(jenkinsPropsFile.read());
-
         List<Stage> stages = new ArrayList<>(2);
-        if (jenkinsProps.containsKey("run.stages")) {
-            for (String stageName : StringUtils.split(jenkinsProps.getProperty("run.stages"), ",")) {
+        if (getEnvvars().containsKey("RUN_STAGES")) {
+            for (String stageName : StringUtils.split(getEnvvars().get("RUN_STAGES"), ",")) {
                 Stage stage = getStage(config.getStages(), stageName);
                 if (stage == null) {
                     throw new ConfigException(String.format("stage(%s) is not configure", stageName));
@@ -70,7 +64,7 @@ public class AslRunner extends CLIRunner{
             stages = config.getStages();
         }
 
-        return runStages(stages);
+        return runStages(stages, paramEnvirons);
     }
 
     private Stage getStage(List<Stage> stages, String stageName) {
@@ -106,12 +100,12 @@ public class AslRunner extends CLIRunner{
         antAslFilePath.copyRecursiveTo(dotAslFilePath);
     }
 
-    private boolean runStages(List<Stage> stages) {
+    private boolean runStages(List<Stage> stages, Map<String, String> paramEnvirons) {
         boolean ret = false;
         copyAntAsl();
 
         for (Stage stage : stages) {
-            ret = runStage(stage);
+            ret = runStage(stage, paramEnvirons);
             if (!ret) {
                 break;
             }
@@ -121,23 +115,35 @@ public class AslRunner extends CLIRunner{
     }
 
     @SneakyThrows
-    private boolean runStage(Stage stage) {
+    private boolean runStage(Stage stage, Map<String, String> paramEnvirons) {
 
         boolean ret = true;
         try {
 
-            // bind envvars data
+            // job envvars data
             EnvVars localEnvvars = getEnvvars();
-
+            // stage envvars data
             Map<String, String> stageEnvirons = stage.getEnvironment();
-            // 实现环境变量的引用
+
+            // paramEnvirons 覆盖 environments中的环境变量
+            stageEnvirons.putAll(paramEnvirons);
+
             for(String key: stageEnvirons.keySet()) {
-                String value = localEnvvars.expand(stageEnvirons.get(key));
+                // 使用当前job的env处理environments中的变量
+                String value = Util.replaceMacro(String.valueOf(stageEnvirons.get(key)), localEnvvars).trim();
+                // 再使用paramEnvirons对value进行二次处理
+                value = Util.replaceMacro(value, paramEnvirons);
+
+                // 更新变量的值
                 stageEnvirons.put(key, value);
+                // 存储变量的值到job的环境变量列表中
                 localEnvvars.put(key, value);
             }
 
+            // 处理内部敏感信息变量
             localEnvvars.putAll(bind(stageEnvirons));
+
+            // 设置当前构建任务的变量
             setEnvvars(localEnvvars);
 
             if (!stage.shouldRun(localEnvvars)) {
@@ -191,16 +197,11 @@ public class AslRunner extends CLIRunner{
 
         try {
             Properties stepProps = new Properties();
-            stepProps.putAll(step.getProperties());
-            stepProps.put("ws.dir", getWs().getRemote());
-
-            FilePath jenkinsPropsFile = new FilePath(getWs(), DOT_CI_DIR + File.separator + JENKINS_DOT_PROPS);
-
-            if (jenkinsPropsFile.exists()) {
-                Properties jenkinsProps = new Properties();
-                jenkinsProps.load(jenkinsPropsFile.read());
-                stepProps.putAll(jenkinsProps);
+            for(String key: step.getProperties().keySet()) {
+                String value = Util.replaceMacro(step.getProperties().get(key), getEnvvars());
+                stepProps.put(key, value);
             }
+            stepProps.put("ws.dir", getWs().getRemote());
 
             FilePath stepPropsFile = new FilePath(dotCIDir, runPropsFileName);
             if (!stepPropsFile.getParent().exists()) {

@@ -22,7 +22,7 @@ public class AslPipelineConfigFromWorkspace extends AslPipelineConfigProvider {
 
         @Override
         public String getDisplayName() {
-            return "Pipeline file";
+            return "Pipeline File";
         }
     }
 

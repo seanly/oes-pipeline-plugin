@@ -10,6 +10,7 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import jenkins.tasks.SimpleBuildStep;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -17,6 +18,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Map;
 
 import static cn.k8ops.jenkinsci.plugins.asl.AslPipelineConfigFromWorkspace.DEFAULT_PIPELINE_FILE;
 import static cn.k8ops.jenkinsci.plugins.asl.AslRunner.DOT_CI_DIR;
@@ -28,19 +30,20 @@ public class AslPipelineBuilder extends Builder implements SimpleBuildStep {
     private AslPipelineConfigProvider provider;
 
     @Getter
-    private String properties;
+    private String environs;
 
     @DataBoundConstructor
-    public AslPipelineBuilder(AslPipelineConfigProvider provider, String properties) {
+    public AslPipelineBuilder(AslPipelineConfigProvider provider, String environs) {
         this.provider = provider;
-        this.properties = properties;
+        this.environs = environs;
     }
 
     @DataBoundSetter
-    public void setProperties(String properties) {
-        this.properties = Util.fixEmptyAndTrim(properties);
+    public void setEnvirons(String environs) {
+        this.environs = Util.fixEmptyAndTrim(environs);
     }
 
+    @SneakyThrows
     @Override
     public void perform(@NonNull Run<?, ?> run, @NonNull FilePath ws, @NonNull EnvVars env,
                         @NonNull Launcher launcher, @NonNull TaskListener listener) throws IOException, InterruptedException {
@@ -75,18 +78,23 @@ public class AslPipelineBuilder extends Builder implements SimpleBuildStep {
             throw new AbortException("configure is empty");
         }
 
-        FilePath jenkinsPropsFile = new FilePath(ws, DOT_CI_DIR + File.separator + JENKINS_DOT_PROPS);
+        FilePath jenkinsEnvironsFile = new FilePath(ws, DOT_CI_DIR + File.separator + JENKINS_DOT_PROPS);
 
-        if (!jenkinsPropsFile.getParent().exists()) {
-            jenkinsPropsFile.getParent().mkdirs();
+        if (!jenkinsEnvironsFile.getParent().exists()) {
+            jenkinsEnvironsFile.getParent().mkdirs();
         }
-        jenkinsPropsFile.write(env.expand(properties), "UTF-8");
+        jenkinsEnvironsFile.write(env.expand(environs), "UTF-8");
 
         logger.println("--// run asl pipeline...");
 
+        // inject jenkins environs file
+
+        PropertiesLoader propertiesLoader = new PropertiesLoader();
+        Map<String, String> paramEnvirons = propertiesLoader.getVarsFromPropertiesContent(environs, env);
+
         AslRunner runner = new AslRunner(run, ws, launcher, listener);
         runner.setEnvvars(env);
-        boolean r = runner.runPipeline(new FilePath(ws, pipelineConfigPath), jenkinsPropsFile);
+        boolean r = runner.runPipeline(new FilePath(ws, pipelineConfigPath), paramEnvirons);
 
         if (r) {
             run.setResult(Result.SUCCESS);

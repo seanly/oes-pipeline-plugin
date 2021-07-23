@@ -11,7 +11,6 @@ public class Step {
 
     private String id;
     private Map<String, String> properties = new HashMap<>();
-    private Map<String, String> environment = new HashMap<>();
 
     public Step(String id, Map<String, String> properties) {
         this.id = id;
@@ -23,7 +22,7 @@ public class Step {
     }
 
     @SneakyThrows
-    public static Step parse(Object  rawConfig, Map<String, String> environment) {
+    public static Step parse(Object  rawConfig) {
         Step step = null;
         /**
          * v2 step format
@@ -71,10 +70,6 @@ public class Step {
                     step = new Step(id, stepConfig);
                 }
             }
-        }
-
-        if (step != null) {
-            step.environment = environment;
         }
 
         step.properties.put("step.id", step.getId());

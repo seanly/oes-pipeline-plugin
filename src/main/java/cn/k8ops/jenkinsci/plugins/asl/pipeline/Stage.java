@@ -64,7 +64,7 @@ public class Stage {
 
             if (tasksConfig != null) {
                 for (Object taskConfig : tasksConfig) {
-                    Step task = Step.parse(taskConfig, environment);
+                    Step task = Step.parse(taskConfig);
                     if (task != null) {
                         tasks.add(task);
                     }

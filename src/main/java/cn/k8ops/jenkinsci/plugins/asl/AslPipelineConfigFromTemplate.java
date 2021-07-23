@@ -43,7 +43,7 @@ public class AslPipelineConfigFromTemplate extends AslPipelineConfigProvider{
 
         @Override
         public String getDisplayName() {
-            return "Pipeline template";
+            return "Pipeline Template";
         }
 
         @SneakyThrows
