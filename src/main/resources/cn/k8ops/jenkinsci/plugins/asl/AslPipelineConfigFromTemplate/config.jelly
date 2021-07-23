@@ -11,7 +11,7 @@
     }
   ]]></script>
 
-  <f:entry title="Template File" field="template">
+  <f:entry title="Template" field="template">
       <f:select name="template" />
   </f:entry>
 

@@ -19,7 +19,7 @@ public class AslPipelineConfigFromJenkins extends AslPipelineConfigProvider {
 
         @Override
         public String getDisplayName() {
-            return "Pipeline yml";
+            return "Pipeline Config";
         }
     }
 }

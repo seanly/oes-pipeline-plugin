@@ -3,7 +3,7 @@
 
   <f:dropdownDescriptorSelector title="Provider" field="provider" />
 
-  <f:entry title="Properties" field="properties">
-    <f:expandableTextbox name="properties" />
+  <f:entry title="Environment" field="environs">
+    <f:expandableTextbox name="environs" />
   </f:entry>
 </j:jelly>

@@ -1,9 +1,6 @@
 package cn.k8ops.jenkinsci.plugins.asl;
 
-import hudson.AbortException;
-import hudson.FilePath;
-import hudson.Launcher;
-import hudson.Util;
+import hudson.*;
 import hudson.console.ConsoleLogFilter;
 import hudson.console.LineTransformationOutputStream;
 import hudson.model.AbstractBuild;
@@ -34,7 +31,7 @@ public class CLIRunner {
 
     @Setter
     @Getter
-    private Map<String, String> envvars;
+    private EnvVars envvars;
 
     public Launcher getLauncher() {
         return launcher;
