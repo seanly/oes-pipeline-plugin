@@ -17,7 +17,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 
 import java.util.Set;
 
-public class AslPipelineStep extends BasicStep{
+public class AslPipelineStep extends AslBasicStep {
 
     public final static String FROM_JENKINS = "jenkins";
     public final static String FROM_WORKSPACE = "workspace";

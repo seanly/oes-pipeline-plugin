@@ -49,7 +49,7 @@ pipeline:
 environment:
   DOCKER_REG: registry.cn-hangzhou.aliyuncs.com
   DOCKER_AUTH: secret://jenkins/usernamePassword/aliyun-acr-chengdu
-  ASL_IMG_PREFIX: registry.cn-hangzhou.aliyuncs.com/k8ops-base/build
+  ASL_IMG_PREFIX: registry.cn-hangzhou.aliyuncs.com/k8ops/jenkins-build
   ASL_IMG_KUBECTL: ${ASL_IMG_PREFIX}:kubetool
   ASL_IMG_MAVEN: ${ASL_IMG_PREFIX}:maven-java8u201
   ASL_IMG_NODE: ${ASL_IMG_PREFIX}:node-12184

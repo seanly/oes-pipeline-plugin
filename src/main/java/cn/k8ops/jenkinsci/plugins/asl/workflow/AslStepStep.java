@@ -15,7 +15,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 
 import java.util.*;
 
-public class AslStepStep extends BasicStep{
+public class AslStepStep extends AslBasicStep {
 
     @Getter
     private final String stepId;
@@ -69,8 +69,6 @@ public class AslStepStep extends BasicStep{
             return "asl-step: ";
         }
     }
-
-
 
     public final class Execution extends SynchronousStepExecution<Void> {
 

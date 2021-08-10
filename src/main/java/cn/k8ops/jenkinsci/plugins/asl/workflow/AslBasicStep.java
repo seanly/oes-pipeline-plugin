@@ -7,7 +7,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 
 import java.io.Serializable;
 
-public abstract class BasicStep extends Step implements Serializable {
+public abstract class AslBasicStep extends Step implements Serializable {
 
     @Getter
     @Setter
