@@ -7,9 +7,9 @@
         <version>4.3</version>
         <relativePath />
     </parent>
-    <groupId>cn.k8ops.jenkinsci.plugins</groupId>
-    <artifactId>asl</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <groupId>cn.opsbox.jenkinsci.plugins</groupId>
+    <artifactId>oes-pipeline</artifactId>
+    <version>2.1-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <properties>
         <maven.javadoc.skip>true</maven.javadoc.skip>
@@ -22,10 +22,15 @@
 
         <jenkins.version>2.263.1</jenkins.version>
         <job-dsl.version>1.76</job-dsl.version>
+
+        <stapler.version>1.102</stapler.version>
+        <jdk.version>1.8</jdk.version>
+        <java.level>8</java.level>
+        <java.level.test>8</java.level.test>
     </properties>
-    <name>Jenkins ASL Plugin</name>
-    <description>Jenkins ASL Plugin: Ant's Script Library</description>
-    <url>https://wiki.jenkins-ci.org/display/JENKINS/asl-plugin</url>
+    <name>Jenkins OES-Pipeline Plugin</name>
+    <description>An extensible Ant based plug-in</description>
+    <url>https://wiki.jenkins-ci.org/display/JENKINS/oes-pipeline-plugin</url>
     <licenses>
         <license>
             <name>MIT License</name>
@@ -67,13 +72,18 @@
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
-            <version>8.2.1</version>
+            <version>4.0.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.jetbrains.kotlin</groupId>
                     <artifactId>kotlin-stdlib-common</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>21.0</version>
         </dependency>
         <dependency>
             <groupId>com.alibaba</groupId>
@@ -86,11 +96,6 @@
             <version>8.7</version>
         </dependency>
         <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>21.0</version>
-        </dependency>
-        <dependency>
             <groupId>commons-net</groupId>
             <artifactId>commons-net</artifactId>
             <version>3.6</version>
@@ -100,6 +105,11 @@
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.zafarkhaja</groupId>
+            <artifactId>java-semver</artifactId>
+            <version>0.9.0</version>
         </dependency>
 
         <!-- jenkins plugins -->
@@ -197,6 +207,34 @@
             </exclusions>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jenkins-ci.tools</groupId>
+                <artifactId>maven-hpi-plugin</artifactId>
+                <version>${hpi-plugin.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.kohsuke.stapler</groupId>
+                        <artifactId>stapler</artifactId>
+                        <version>${stapler.version}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <dependentWarExcludes>
+                        org.apache.httpcomponents:*,com.google.guava*
+                    </dependentWarExcludes>
+                    <archive>
+                        <manifestEntries>
+                            <Mask-Classes>com.google.common</Mask-Classes>
+                        </manifestEntries>
+                    </archive>
+                    <maskClasses>com.google.common.</maskClasses>
+                    <minimumJavaVersion/>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
     <repositories>
         <repository>
