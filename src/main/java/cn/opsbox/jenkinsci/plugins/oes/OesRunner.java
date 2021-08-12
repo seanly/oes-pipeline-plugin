@@ -206,6 +206,8 @@ public class OesRunner extends CLIRunner{
                 stepProps.put(key, value);
             }
             stepProps.put("ws.dir", getWs().getRemote());
+            stepProps.put("step.id", step.getId());
+            stepProps.put("asl.steps.root", dotOesStepsDir.getRemote());
 
             FilePath stepPropsFile = new FilePath(dotCIDir, runPropsFileName);
             if (!stepPropsFile.getParent().exists()) {
@@ -223,10 +225,6 @@ public class OesRunner extends CLIRunner{
             args.add("-f");
             args.add(String.format("%s/run.xml", dotOesStepsDir.getRemote()));
             args.add("step");
-            args.add("-Dstep.id");
-            args.add(step.getId());
-            args.add("-Dasl.steps.root");
-            args.add(dotOesStepsDir.getRemote());
             args.add("-propertyfile");
             args.add(stepPropsFile.getRemote());
             args.add("-logger");
