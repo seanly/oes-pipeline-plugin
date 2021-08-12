@@ -1,6 +1,8 @@
 package cn.opsbox.jenkinsci.plugins.oes;
 
 import cn.opsbox.jenkinsci.plugins.oes.pipeline.Step;
+import cn.opsbox.jenkinsci.plugins.oes.registry.RegistryUtil;
+import cn.opsbox.jenkinsci.plugins.oes.util.Constants;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.*;
 import hudson.model.AbstractProject;
@@ -13,16 +15,14 @@ import hudson.util.ListBoxModel;
 import jenkins.tasks.SimpleBuildStep;
 import lombok.Getter;
 import lombok.SneakyThrows;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class OesStepBuilder extends Builder implements SimpleBuildStep {
 
@@ -49,7 +49,7 @@ public class OesStepBuilder extends Builder implements SimpleBuildStep {
 
         OesRunner runner = new OesRunner(run, ws, launcher, listener);
         runner.setEnvvars(env);
-        runner.copyOesSteps();
+        runner.download(stepId);
         boolean r = runner.runStep(new Step(stepId, convertStepProperties(env)));
         if (r) {
             run.setResult(Result.SUCCESS);
@@ -86,14 +86,17 @@ public class OesStepBuilder extends Builder implements SimpleBuildStep {
         public ListBoxModel doFillStepIdItems() {
 
             ListBoxModel items = new ListBoxModel();
-
-            String oesStepsRoot = OesRunner.getOesStepsRoot();
-            FilePath rootFilePath = new FilePath(new File(oesStepsRoot));
-            FilePath stepsDir = new FilePath(rootFilePath, STEPS_DIR);
-            List<FilePath> stepDirs = stepsDir.list();
-
-            for (FilePath stepDir : stepDirs) {
-                items.add(stepDir.getName(), stepDir.getName());
+            try {
+                List<String> stepIds = RegistryUtil.getStepRegistry().getStepList();
+                Collections.sort(stepIds);
+                for (String stepId : stepIds) {
+                    if (StringUtils.equalsIgnoreCase(stepId, Constants.STEP_ASL)) {
+                        continue;
+                    }
+                    items.add(stepId, stepId);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
             return items;

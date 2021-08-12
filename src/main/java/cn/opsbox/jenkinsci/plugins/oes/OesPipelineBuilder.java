@@ -18,6 +18,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.HashMap;
 import java.util.Map;
 
 import static cn.opsbox.jenkinsci.plugins.oes.OesPipelineConfigFromWorkspace.DEFAULT_PIPELINE_FILE;
@@ -83,14 +84,17 @@ public class OesPipelineBuilder extends Builder implements SimpleBuildStep {
         if (!jenkinsEnvironsFile.getParent().exists()) {
             jenkinsEnvironsFile.getParent().mkdirs();
         }
-        jenkinsEnvironsFile.write(env.expand(environs), "UTF-8");
-
         logger.println("--// run oes pipeline...");
 
         // inject jenkins environs file
 
         PropertiesLoader propertiesLoader = new PropertiesLoader();
-        Map<String, String> paramEnvirons = propertiesLoader.getVarsFromPropertiesContent(environs, env);
+        Map<String, String> paramEnvirons = new HashMap<>();
+
+        if (StringUtils.isNotEmpty(environs)) {
+            jenkinsEnvironsFile.write(env.expand(environs), "UTF-8");
+            paramEnvirons = propertiesLoader.getVarsFromPropertiesContent(environs, env);
+        }
 
         OesRunner runner = new OesRunner(run, ws, launcher, listener);
         runner.setEnvvars(env);

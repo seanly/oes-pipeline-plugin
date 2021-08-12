@@ -4,6 +4,9 @@ import cn.opsbox.jenkinsci.plugins.oes.pipeline.Config;
 import cn.opsbox.jenkinsci.plugins.oes.pipeline.ConfigException;
 import cn.opsbox.jenkinsci.plugins.oes.pipeline.Stage;
 import cn.opsbox.jenkinsci.plugins.oes.pipeline.Step;
+import cn.opsbox.jenkinsci.plugins.oes.registry.RegistryUtil;
+import cn.opsbox.jenkinsci.plugins.oes.registry.StepRegistry;
+import cn.opsbox.jenkinsci.plugins.oes.util.Constants;
 import hudson.*;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
@@ -81,7 +84,7 @@ public class OesRunner extends CLIRunner{
     public static String getOesStepsRoot() {
         String oesStepsRoot = System.getProperty("oes.steps.root");
         if (!StringUtils.isNotBlank(oesStepsRoot)) {
-            throw new AbortException("--// 启动的时候没有配置-Does.steps.root=/path/to/oes-steps变量");
+            throw new AbortException("--//ERR: 启动的时候没有配置-Does.steps.root=/path/to/oes-steps变量");
         }
 
         return oesStepsRoot;
@@ -185,6 +188,7 @@ public class OesRunner extends CLIRunner{
     }
 
     public boolean runStep(Step step) {
+        download(step.getId());
         return ant(step);
     }
 
@@ -219,6 +223,10 @@ public class OesRunner extends CLIRunner{
             args.add("-f");
             args.add(String.format("%s/run.xml", dotOesStepsDir.getRemote()));
             args.add("step");
+            args.add("-Dstep.id");
+            args.add(step.getId());
+            args.add("-Dasl.steps.root");
+            args.add(dotOesStepsDir.getRemote());
             args.add("-propertyfile");
             args.add(stepPropsFile.getRemote());
             args.add("-logger");
@@ -232,7 +240,6 @@ public class OesRunner extends CLIRunner{
 
         return false;
     }
-
 
     public MultiBinding getMultiBinding(String envKey, String type, String from) {
 
@@ -359,4 +366,28 @@ public class OesRunner extends CLIRunner{
         return new String(decoder.decode(encodeStr));
     }
 
+    public void download(String stepId) {
+
+        PrintStream LOG = getLogger();
+        try {
+            StepRegistry stepRegistry = RegistryUtil.getStepRegistry();
+
+            FilePath aslRootFilePath = new FilePath(getWs(), DOT_OES_STEPS_DIR);
+
+            LOG.printf("--//INFO: start download step(%s) package...%n", stepId);
+            String version = stepRegistry.download(stepId, aslRootFilePath);
+            FilePath runXmlFilePath = new FilePath(aslRootFilePath, String.format("%s/run.xml", stepId));
+
+            if (!runXmlFilePath.exists()) {
+                throw new OesException(String.format("The StepType(%s) is not supported.", stepId));
+            }
+
+            LOG.println("--//INFO: download asl package ...");
+            stepRegistry.download(Constants.STEP_ASL, aslRootFilePath);
+
+            LOG.printf("--//INFO: step (%s:%s).%n", stepId, version);
+        } catch (Exception e) {
+            e.printStackTrace(getLogger());
+        }
+    }
 }
