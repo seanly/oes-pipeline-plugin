@@ -14,6 +14,10 @@ public class OesGlobalConfiguration extends GlobalConfiguration {
     @Setter
     private StepRegistryProvider stepRegistryProvider;
 
+    public OesGlobalConfiguration() {
+        load();
+    }
+
     @Override
     public boolean configure(StaplerRequest req, JSONObject json) {
         req.bindJSON(this, json);

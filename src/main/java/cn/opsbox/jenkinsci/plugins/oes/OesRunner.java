@@ -215,15 +215,19 @@ public class OesRunner extends CLIRunner{
             }
             stepProps.store(stepPropsFile.write(), "step properties");
 
+            FilePath aslStepDir = new FilePath(dotOesStepsDir, Constants.STEP_ASL);
+
+            FilePath antExecFilePath = new FilePath(aslStepDir, "tools/ant/bin/ant");
             if (getLauncher().isUnix()) {
-                FilePath antExecFilePath = new FilePath(dotOesStepsDir, "tools/ant/bin/ant");
                 antExecFilePath.chmod(0755);
+            } else {
+                antExecFilePath = new FilePath(aslStepDir, "tools/ant/bin/ant.bat");
             }
 
             ArgumentListBuilder args = new ArgumentListBuilder();
-            args.add(String.format("%s/tools/ant/bin/ant", dotOesStepsDir.getRemote()));
+            args.add(antExecFilePath);
             args.add("-f");
-            args.add(String.format("%s/run.xml", dotOesStepsDir.getRemote()));
+            args.add(String.format("%s/run.xml", aslStepDir.getRemote()));
             args.add("step");
             args.add("-propertyfile");
             args.add(stepPropsFile.getRemote());
@@ -380,7 +384,7 @@ public class OesRunner extends CLIRunner{
                 throw new OesException(String.format("The StepType(%s) is not supported.", stepId));
             }
 
-            LOG.println("--//INFO: download asl package ...");
+            LOG.println("--//INFO: download bootstrap package asl ...");
             stepRegistry.download(Constants.STEP_ASL, aslRootFilePath);
 
             LOG.printf("--//INFO: step (%s:%s).%n", stepId, version);

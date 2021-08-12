@@ -1,6 +1,6 @@
 package cn.opsbox.jenkinsci.plugins.oes.registry;
 
-import com.vdurmont.semver4j.Semver;
+import com.github.zafarkhaja.semver.Version;
 import hudson.FilePath;
 import lombok.SneakyThrows;
 import org.apache.commons.lang.StringUtils;
@@ -37,18 +37,24 @@ public abstract class StepRegistry {
 
     protected String getLatestVersion(List<String> versions) {
 
+        if (versions.size() == 1) {
+            return versions.get(0);
+        }
+
         String latestVersion = StringUtils.EMPTY;
 
         for (String version : versions) {
 
+            if (StringUtils.isEmpty(latestVersion)) {
+                latestVersion = version;
+                continue;
+            }
+
             if (StringUtils.isNotEmpty(version)) {
+                Version ver1 = Version.valueOf(latestVersion);
+                Version ver2 = Version.valueOf(version);
 
-                Semver ver1 = new Semver(latestVersion);
-                Semver ver2 = new Semver(version);
-
-                latestVersion = ver1.compareTo(ver2) >= 0 ?
-                        ver1.getOriginalValue().trim() :
-                        ver2.getOriginalValue().trim();
+                latestVersion = ver1.compareTo(ver2) >= 0 ? latestVersion : version;
             }
         }
 

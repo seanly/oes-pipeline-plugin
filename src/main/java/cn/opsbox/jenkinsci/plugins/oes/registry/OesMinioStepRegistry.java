@@ -30,10 +30,10 @@ public class OesMinioStepRegistry extends StepRegistry{
 
     private final MinioClient client;
 
+    @SneakyThrows
     public OesMinioStepRegistry(String endpoint, String accessKey, String secretKey) {
         super();
-        client = MinioClient.builder().endpoint(endpoint)
-                .credentials(accessKey, secretKey).build();
+        client = new MinioClient(endpoint, accessKey, secretKey);
     }
 
     @Override
@@ -103,8 +103,8 @@ public class OesMinioStepRegistry extends StepRegistry{
     private InputStream getFileInputStream(MinioClient client, String remoteFilePath) throws IOException {
 
         try {
-            client.statObject(StatObjectArgs.builder().bucket(bucket).object(remoteFilePath).build());
-            return client.getObject(GetObjectArgs.builder().bucket(bucket).object(remoteFilePath).build());
+            client.statObject(bucket, remoteFilePath);
+            return client.getObject(bucket, remoteFilePath);
         } catch (Exception e) {
             e.printStackTrace();
             throw new IOException("get download input stream error.");
@@ -112,8 +112,8 @@ public class OesMinioStepRegistry extends StepRegistry{
     }
 
     private String getStepLatestVersion(String stepId) throws IOException{
-        String taskPath = getStepPath(stepId);
-        List<String> versionDirs = getDirList(client, String.format("%s/", taskPath));
+        String stepPath = getStepPath(stepId);
+        List<String> versionDirs = getDirList(client, String.format("%s/", stepPath));
         if (versionDirs.size() == 0) {
             throw new IOException(String.format("don't %s package", stepId));
         }
@@ -128,30 +128,29 @@ public class OesMinioStepRegistry extends StepRegistry{
     private String getGroupPath() {
         String groupDir = StringUtils.join(StringUtils.split(archiveGroup, "."), "/");
 
-        String laneDir = StringUtils.EMPTY;
-        if (!StringUtils.isEmpty(archiveLane)) {
-            laneDir = String.format("/%s", archiveLane);
+        if (StringUtils.isEmpty(archiveLane)) {
+            return String.format("%s/", groupDir);
+        } else {
+            String laneDir = String.format("%s", archiveLane);
+            return String.format("%s/%s/", laneDir, groupDir);
         }
-
-        return String.format("%s/%s/", laneDir, groupDir);
     }
 
     private List<String> getDirList(MinioClient client, String parentPath) throws IOException {
 
         List<String> dirList = new ArrayList<>();
         try {
-            boolean found = client.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
+            boolean found = client.bucketExists(bucket);
             if (!found) {
                 throw new IOException(String.format("bucket(%s) is not exists", bucket));
             }
 
-            Iterable<Result<Item>> myObjects = client.listObjects(
-                    ListObjectsArgs.builder().bucket(bucket).prefix(parentPath).build());
+            Iterable<Result<Item>> myObjects = client.listObjects(bucket, parentPath, false);
 
             for (Result<Item> result : myObjects) {
                 Item item = result.get();
-                String versionName = item.objectName().substring(parentPath.length()).split("/", 2)[0];
-                dirList.add(versionName);
+                String step = item.objectName().substring(parentPath.length()).split("/", 2)[0];
+                dirList.add(step);
             }
             return dirList;
 

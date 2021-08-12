@@ -113,7 +113,7 @@ public class OesPipelineBuilder extends Builder implements SimpleBuildStep {
         return (DescriptorImpl) super.getDescriptor();
     }
 
-    @Extension
+    @Extension(ordinal = 2)
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
         public DescriptorImpl() {

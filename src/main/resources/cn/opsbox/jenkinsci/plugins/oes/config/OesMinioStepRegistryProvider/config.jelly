@@ -19,7 +19,7 @@
     </f:entry>
 
     <f:entry title="Archive Group" field="archiveGroup" description="Archive Group">
-        <f:textbox default="opsbox.jenkins.tasks" value="${instance.archiveGroup}" />
+        <f:textbox default="opsbox.jenkins.steps" value="${instance.archiveGroup}" />
     </f:entry>
 
 </j:jelly>
