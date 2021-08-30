@@ -7,6 +7,7 @@ import hudson.util.ListBoxModel;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.File;
@@ -40,6 +41,7 @@ public class OesPipelineConfigFromTemplate extends PipelineConfigProvider {
         return (DescriptorImpl) super.getDescriptor();
     }
 
+    @Symbol("oesPipelineConfigFromTemplate")
     @Extension
     public static final class DescriptorImpl extends PipelineConfigProviderDescriptor {
 

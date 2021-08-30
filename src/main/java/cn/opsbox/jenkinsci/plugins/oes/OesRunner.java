@@ -105,7 +105,7 @@ public class OesRunner extends CLIRunner{
 
     private boolean runStages(List<Stage> stages, Map<String, String> paramEnvirons) {
         boolean ret = false;
-        copyOesSteps();
+        //copyOesSteps();
 
         for (Stage stage : stages) {
             ret = runStage(stage, paramEnvirons);

@@ -1,6 +1,5 @@
 package cn.opsbox.jenkinsci.plugins.oes;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.*;
 import hudson.model.AbstractProject;
 import hudson.model.Result;
@@ -10,8 +9,10 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import jenkins.tasks.SimpleBuildStep;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
@@ -21,7 +22,7 @@ import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import static cn.opsbox.jenkinsci.plugins.oes.OesPipelineConfigFromWorkspace.DEFAULT_PIPELINE_FILE;
+import static cn.opsbox.jenkinsci.plugins.oes.OesPipelineConfigFromWorkspace.DescriptorImpl.DEFAULT_PIPELINE_FILE;
 import static cn.opsbox.jenkinsci.plugins.oes.OesRunner.DOT_CI_DIR;
 import static cn.opsbox.jenkinsci.plugins.oes.OesRunner.JENKINS_DOT_PROPS;
 
@@ -113,6 +114,7 @@ public class OesPipelineBuilder extends Builder implements SimpleBuildStep {
         return (DescriptorImpl) super.getDescriptor();
     }
 
+    @Symbol("oesPipeline")
     @Extension(ordinal = 2)
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
