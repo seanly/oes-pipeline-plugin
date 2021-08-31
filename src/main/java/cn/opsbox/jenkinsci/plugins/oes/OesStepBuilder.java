@@ -3,7 +3,6 @@ package cn.opsbox.jenkinsci.plugins.oes;
 import cn.opsbox.jenkinsci.plugins.oes.pipeline.Step;
 import cn.opsbox.jenkinsci.plugins.oes.registry.RegistryUtil;
 import cn.opsbox.jenkinsci.plugins.oes.util.Constants;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.*;
 import hudson.model.AbstractProject;
 import hudson.model.Result;
@@ -14,8 +13,10 @@ import hudson.tasks.Builder;
 import hudson.util.ListBoxModel;
 import jenkins.tasks.SimpleBuildStep;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
@@ -30,7 +31,7 @@ public class OesStepBuilder extends Builder implements SimpleBuildStep {
     private String stepId;
 
     @Getter
-    private List<OesStepProperty> stepProperties = new ArrayList<>();
+    private List<OesStepProp> stepProps = new ArrayList<>();
 
     @DataBoundConstructor
     public OesStepBuilder(String stepId) {
@@ -38,8 +39,8 @@ public class OesStepBuilder extends Builder implements SimpleBuildStep {
     }
 
     @DataBoundSetter
-    public void setStepProperties(List<OesStepProperty> stepProperties) {
-        this.stepProperties = stepProperties;
+    public void setStepProps(List<OesStepProp> stepProps) {
+        this.stepProps = stepProps;
     }
     @Override
     public void perform(@NonNull Run<?, ?> run, @NonNull FilePath ws, @NonNull EnvVars env,
@@ -58,7 +59,7 @@ public class OesStepBuilder extends Builder implements SimpleBuildStep {
 
     private Map<String, String> convertStepProperties(EnvVars envVars) {
         Map<String, String> retRaw = new HashMap<>();
-        for (OesStepProperty var : this.stepProperties) {
+        for (OesStepProp var : this.stepProps) {
             retRaw.put(var.getKey(), envVars.expand(var.getValue()));
         }
 
@@ -71,6 +72,7 @@ public class OesStepBuilder extends Builder implements SimpleBuildStep {
         return (DescriptorImpl)super.getDescriptor();
     }
 
+    @Symbol("oesStep")
     @Extension(ordinal = 1)
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 

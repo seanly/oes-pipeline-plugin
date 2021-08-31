@@ -2,23 +2,23 @@ package cn.opsbox.jenkinsci.plugins.oes;
 
 import hudson.Extension;
 import lombok.Getter;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 public class OesPipelineConfigFromWorkspace extends PipelineConfigProvider {
 
-    public final static String DEFAULT_PIPELINE_FILE = ".ant.yml";
-
     @Getter
-    private String file = DEFAULT_PIPELINE_FILE;
-
+    private String file = DescriptorImpl.DEFAULT_PIPELINE_FILE;
 
     @DataBoundConstructor
     public OesPipelineConfigFromWorkspace(String file) {
         this.file = file;
     }
 
+    @Symbol("oesPipelineConfigFromWorkspace")
     @Extension
     public static final class DescriptorImpl extends PipelineConfigProviderDescriptor {
+        public final static String DEFAULT_PIPELINE_FILE = ".ant.yml";
 
         @Override
         public String getDisplayName() {

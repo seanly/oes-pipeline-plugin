@@ -1,4 +1,4 @@
-# asl plugin
+# oes-pipeline plugin
 
 一个在Jenkins运行asl-steps的插件，在Jenkins master启动过程中配置-Dasl.root=/path/to/asl-steps
 
@@ -83,4 +83,42 @@ pipeline:
         container: ${env.APP_NAME}
         image: ${env.APP_IMG}
         namespace: ${env.APP_GROUP}-${env.APP_ENV}
+```
+
+# Jenkins Pipeline语法
+
+```groovy
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Hello') {
+            steps {
+                echo '--//INFO: this is a test pipeline'
+                oesStep stepId: "sample", 
+                    stepProps: [
+                        stepProp(key: "arg1", value:"hi, jenkins oes-step")
+                    ]
+                    
+                oesPipeline environs: """
+                        HELLO_v1=hi, oes-pipeline
+                        RUN_STAGES=build
+                    """.stripIndent(),
+                    provider: oesPipelineConfigFromJenkins(content: '''
+                        environment:
+                          HELLO: ${HELLO_v1}
+                        
+                        pipeline:
+                          - name: build
+                            steps:
+                              - step.id: sample 
+                                arg1: 'hi, oes-jenkins'
+                    '''.stripIndent()
+                    )
+            }
+        }
+    }
+}
+
 ```

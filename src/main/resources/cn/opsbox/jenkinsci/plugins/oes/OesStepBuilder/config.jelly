@@ -7,7 +7,7 @@
 
   <f:advanced>
     <f:entry title="${%Step Properties}">
-      <f:repeatable add="${%Add Step Property}" field="stepProperties" noAddButton="false">
+      <f:repeatable add="${%Add Step Property}" field="stepProps" noAddButton="false">
         <table width="100%">
           <f:entry title="${%Key}" field="key">
             <f:textbox  clazz="required" />
