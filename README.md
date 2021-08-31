@@ -102,11 +102,12 @@ pipeline {
                     ]
                     
                 oesPipeline environs: """
-                        HELLO='hi, oes-pipeline'
-                    """,
+                        HELLO_v1=hi, oes-pipeline
+                        RUN_STAGES=build
+                    """.stripIndent(),
                     provider: oesPipelineConfigFromJenkins(content: '''
                         environment:
-                          HELLO: ${HELLO}
+                          HELLO: ${HELLO_v1}
                         
                         pipeline:
                           - name: build
