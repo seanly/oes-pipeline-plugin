@@ -18,7 +18,7 @@ public class OesPipelineConfigFromWorkspace extends PipelineConfigProvider {
     @Symbol("oesPipelineConfigFromWorkspace")
     @Extension
     public static final class DescriptorImpl extends PipelineConfigProviderDescriptor {
-        public final static String DEFAULT_PIPELINE_FILE = ".ant.yml";
+        public final static String DEFAULT_PIPELINE_FILE = ".oes-pipeline.yml";
 
         @Override
         public String getDisplayName() {

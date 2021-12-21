@@ -17,6 +17,7 @@ import lombok.SneakyThrows;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.credentialsbinding.MultiBinding;
 import org.jenkinsci.plugins.credentialsbinding.impl.*;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,6 +53,9 @@ public class OesRunner extends CLIRunner{
 
         Config config = Config.parse(pipelineConfigFile.readToString());
 
+        // save .oes-pipeline.final.yml file.
+        save(config);
+
         List<Stage> stages = new ArrayList<>(2);
         if (getEnvvars().containsKey("RUN_STAGES")) {
             for (String stageName : StringUtils.split(getEnvvars().get("RUN_STAGES"), ",")) {
@@ -68,6 +72,17 @@ public class OesRunner extends CLIRunner{
         }
 
         return runStages(stages, paramEnvirons);
+    }
+
+    private void save(Config config) {
+        try {
+            Yaml yaml = new Yaml();
+            FilePath finalPipelineYmlFile = new FilePath(getWs(), Constants.FINAL_PIPELINE_FILE);
+            getLogger().println(String.format("--//save parsed configure file (%s)", finalPipelineYmlFile.getRemote()));
+            finalPipelineYmlFile.write(yaml.dumpAsMap(config), "UTF-8");
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace(getLogger());
+        }
     }
 
     private Stage getStage(List<Stage> stages, String stageName) {
