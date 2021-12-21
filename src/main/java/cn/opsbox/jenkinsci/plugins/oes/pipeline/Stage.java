@@ -32,7 +32,7 @@ public class Stage {
 
         Stage step = new Stage((String) rawConfig.get(Config.KEY_NAME));
         step.rawConfig = rawConfig;
-        step.environment = environment;
+        step.environment = new HashMap<>(environment);
 
         // parse 'environment'
         if (rawConfig.containsKey(Config.KEY_ENVIRONMENT)) {
