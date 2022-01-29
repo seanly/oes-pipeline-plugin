@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static cn.opsbox.jenkinsci.plugins.oes.OesPipelineConfigFromWorkspace.DescriptorImpl.DEFAULT_PIPELINE_FILE;
-import static cn.opsbox.jenkinsci.plugins.oes.OesRunner.DOT_CI_DIR;
+import static cn.opsbox.jenkinsci.plugins.oes.OesRunner.DOT_OES_CI_DIR;
 import static cn.opsbox.jenkinsci.plugins.oes.OesRunner.JENKINS_DOT_PROPS;
 
 public class OesPipelineBuilder extends Builder implements SimpleBuildStep {
@@ -59,9 +59,6 @@ public class OesPipelineBuilder extends Builder implements SimpleBuildStep {
         if (provider instanceof OesPipelineConfigFromJenkins) {
             OesPipelineConfigFromJenkins fromJenkins = (OesPipelineConfigFromJenkins) provider;
             content = fromJenkins.getContent();
-        } else if (provider instanceof OesPipelineConfigFromTemplate) {
-            OesPipelineConfigFromTemplate fromTemplate = (OesPipelineConfigFromTemplate) provider;
-            content = fromTemplate.getContent();
         } else if (provider instanceof OesPipelineConfigFromWorkspace) {
             OesPipelineConfigFromWorkspace fromWs = (OesPipelineConfigFromWorkspace) provider;
             FilePath configFile = new FilePath(ws, fromWs.getFile());
@@ -70,8 +67,9 @@ public class OesPipelineBuilder extends Builder implements SimpleBuildStep {
             throw new AbortException("configure provider is not support");
         }
         FilePath configFile = new FilePath(ws, pipelineConfigPath);
-        if (!configFile.getParent().exists()) {
-            configFile.getParent().mkdirs();
+        FilePath configDir = configFile.getParent();
+        if (configDir != null && !configDir.exists()) {
+            configDir.mkdirs();
         }
 
         if (StringUtils.isNotBlank(content)) {
@@ -80,15 +78,15 @@ public class OesPipelineBuilder extends Builder implements SimpleBuildStep {
             throw new AbortException("configure is empty");
         }
 
-        FilePath jenkinsEnvironsFile = new FilePath(ws, DOT_CI_DIR + File.separator + JENKINS_DOT_PROPS);
+        FilePath jenkinsEnvironsFile = new FilePath(ws, DOT_OES_CI_DIR + File.separator + JENKINS_DOT_PROPS);
 
-        if (!jenkinsEnvironsFile.getParent().exists()) {
-            jenkinsEnvironsFile.getParent().mkdirs();
+        FilePath jenkinsEnvironsDir = jenkinsEnvironsFile.getParent();
+        if (jenkinsEnvironsDir!= null && !jenkinsEnvironsDir.exists()) {
+            jenkinsEnvironsDir.mkdirs();
         }
         logger.println("--// run oes pipeline...");
 
         // inject jenkins environs file
-
         PropertiesLoader propertiesLoader = new PropertiesLoader();
         Map<String, String> paramEnvirons = new HashMap<>();
 

@@ -1,16 +1,9 @@
 # oes-pipeline plugin
 
-一个在Jenkins运行asl-steps的插件，在Jenkins master启动过程中配置-Dasl.root=/path/to/asl-steps
+一种使用ant扩展jenkins构建能力的插件
 
 # 调试方法
 
-```bash
-
-cd /opt/
-git clone https://github.com/seanly/asl-steps.git
-
-mvn hpi:run -Dasl.root=/opt/asl-steps
-```
 
 # 配置语法
 
@@ -103,7 +96,7 @@ pipeline {
                     
                 oesPipeline environs: """
                         HELLO_v1=hi, oes-pipeline
-                        RUN_STAGES=build
+                        _RUN_STAGES=build
                     """.stripIndent(),
                     provider: oesPipelineConfigFromJenkins(content: '''
                         environment:

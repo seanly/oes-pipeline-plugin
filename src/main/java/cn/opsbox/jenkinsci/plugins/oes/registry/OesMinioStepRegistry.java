@@ -71,13 +71,17 @@ public class OesMinioStepRegistry extends StepRegistry{
         FilePath packageMd5FilePath = new FilePath(saveTo, String.format("%s.md5", packageFileName));
         String packageMd5RemotePath = String.format("%s.md5", packageRemotePath);
 
-        packageMd5FilePath.copyFrom(getFileInputStream(client, packageMd5RemotePath));
+        InputStream md5InputStream = getFileInputStream(client, packageMd5RemotePath);
+        packageMd5FilePath.copyFrom(md5InputStream);
         String md5Code = packageMd5FilePath.readToString().trim();
+        md5InputStream.close();
 
         boolean isLatest = isLatestPkg(md5Code, packageFilePath);
         if (!isLatest) {
             // download step package
-            packageFilePath.copyFrom(getFileInputStream(client, packageRemotePath));
+            InputStream pkgInpustStream = getFileInputStream(client, packageRemotePath);
+            packageFilePath.copyFrom(pkgInpustStream);
+            pkgInpustStream.close();
 
             String fileMd5code = DigestUtils.md5Hex(packageFilePath.read());
             if (fileMd5code.compareTo(md5Code) != 0) {

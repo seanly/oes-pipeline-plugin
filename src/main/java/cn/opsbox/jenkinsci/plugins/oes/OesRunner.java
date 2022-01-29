@@ -22,12 +22,13 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class OesRunner extends CLIRunner{
 
-    public static final String DOT_CI_DIR = ".ci";
+    public static final String DOT_OES_CI_DIR = ".oes-ci";
     public static final String DOT_OES_STEPS_DIR = ".oes-steps";
 
     public static final String JENKINS_DOT_PROPS = "jenkins.properties";
@@ -57,8 +58,8 @@ public class OesRunner extends CLIRunner{
         save(config);
 
         List<Stage> stages = new ArrayList<>(2);
-        if (getEnvvars().containsKey("RUN_STAGES")) {
-            for (String stageName : StringUtils.split(getEnvvars().get("RUN_STAGES"), ",")) {
+        if (paramEnvirons.containsKey("_RUN_STAGES")) {
+            for (String stageName : StringUtils.split(paramEnvirons.get("_RUN_STAGES"), ",")) {
                 Stage stage = getStage(config.getStages(), stageName);
                 if (stage == null) {
                     throw new ConfigException(String.format("stage(%s) is not configure", stageName));
@@ -95,32 +96,8 @@ public class OesRunner extends CLIRunner{
         return null;
     }
 
-    @SneakyThrows
-    public static String getOesStepsRoot() {
-        String oesStepsRoot = System.getProperty("oes.steps.root");
-        if (!StringUtils.isNotBlank(oesStepsRoot)) {
-            throw new AbortException("--//ERR: 启动的时候没有配置-Does.steps.root=/path/to/oes-steps变量");
-        }
-
-        return oesStepsRoot;
-    }
-
-    @SneakyThrows
-    public void copyOesSteps() {
-        getLogger().println("--//copy oes-steps tool....");
-
-        File oesStepsRoot = new File(getOesStepsRoot());
-        FilePath rootFilePath = new FilePath(oesStepsRoot);
-        FilePath dotOesFilePath = new FilePath(getWs(), DOT_OES_STEPS_DIR);
-        if (!dotOesFilePath.exists()) {
-            dotOesFilePath.mkdirs();
-        }
-        rootFilePath.copyRecursiveTo(dotOesFilePath);
-    }
-
     private boolean runStages(List<Stage> stages, Map<String, String> paramEnvirons) {
         boolean ret = false;
-        //copyOesSteps();
 
         for (Stage stage : stages) {
             ret = runStage(stage, paramEnvirons);
@@ -146,9 +123,10 @@ public class OesRunner extends CLIRunner{
             // paramEnvirons 覆盖 environments中的环境变量
             stageEnvirons.putAll(paramEnvirons);
 
-            for(String key: stageEnvirons.keySet()) {
+            for (Map.Entry entry : stageEnvirons.entrySet()) {
+                String key = (String) entry.getKey();
                 // 使用当前job的env处理environments中的变量
-                String value = Util.replaceMacro(String.valueOf(stageEnvirons.get(key)), localEnvvars).trim();
+                String value = Util.replaceMacro(String.valueOf(stageEnvirons.get(key)), localEnvvars);
                 // 再使用paramEnvirons对value进行二次处理
                 value = Util.replaceMacro(value, paramEnvirons);
 
@@ -211,7 +189,7 @@ public class OesRunner extends CLIRunner{
 
         String runPropsFileName = String.format("%s-%s.properties", step.getId(), getCurrentTime());
 
-        FilePath dotCIDir = new FilePath(getWs(), DOT_CI_DIR);
+        FilePath dotCIDir = new FilePath(getWs(), DOT_OES_CI_DIR);
         FilePath dotOesStepsDir = new FilePath(getWs(), DOT_OES_STEPS_DIR);
 
         try {
@@ -220,41 +198,47 @@ public class OesRunner extends CLIRunner{
                 String value = Util.replaceMacro(step.getProperties().get(key), getEnvvars());
                 stepProps.put(key, value);
             }
-            stepProps.put("ws.dir", getWs().getRemote());
-            stepProps.put("step.id", step.getId());
-            stepProps.put("asl.steps.root", dotOesStepsDir.getRemote());
 
+            String wsDirProp = getWs().getRemote();
             FilePath stepPropsFile = new FilePath(dotCIDir, runPropsFileName);
-            if (!stepPropsFile.getParent().exists()) {
-                stepPropsFile.getParent().mkdirs();
+            FilePath stepPropParent = stepPropsFile.getParent();
+            if (stepPropParent != null && !stepPropParent.exists()) {
+                stepPropParent.mkdirs();
             }
             stepProps.store(stepPropsFile.write(), "step properties");
 
-            FilePath aslStepDir = new FilePath(dotOesStepsDir, Constants.STEP_ASL);
+            FilePath aslDir = new FilePath(dotOesStepsDir, Constants.STEP_ASL);
+            FilePath stepDir = new FilePath(dotOesStepsDir, step.getId());
 
-            FilePath antExecFilePath = new FilePath(aslStepDir, "tools/ant/bin/ant");
+            FilePath antExecFilePath = new FilePath(aslDir, "tools/ant/bin/ant");
             if (getLauncher().isUnix()) {
                 antExecFilePath.chmod(0755);
             } else {
-                antExecFilePath = new FilePath(aslStepDir, "tools/ant/bin/ant.bat");
+                antExecFilePath = new FilePath(aslDir, "tools/ant/bin/ant.bat");
             }
 
             ArgumentListBuilder args = new ArgumentListBuilder();
             args.add(antExecFilePath);
             args.add("-f");
-            args.add(String.format("%s/run.xml", aslStepDir.getRemote()));
-            args.add("step");
+            // run step/run.xml
+            args.add(String.format("%s/run.xml", stepDir.getRemote()));
+            args.add(String.format("-Dasl.root=%s", aslDir.getRemote()));
+            args.add(String.format("-Dws.dir=%s", wsDirProp));
+            args.add(String.format("-Dbasedir=%s", wsDirProp));
+            // add step runtime arguments
             args.add("-propertyfile");
             args.add(stepPropsFile.getRemote());
+            // add run logger.
             args.add("-logger");
             args.add("org.apache.tools.ant.NoBannerLogger");
 
             return execute(args);
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace(getLogger());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-
         return false;
     }
 
@@ -301,6 +285,7 @@ public class OesRunner extends CLIRunner{
         String[] secretMeta = secretConfBody.split("/", 2);
 
         if( secretMeta.length != 2) {
+            getLogger().println(String.format("secret format error: %s", envKey));
             return null;
         }
 
@@ -375,12 +360,12 @@ public class OesRunner extends CLIRunner{
 
     public static String encodeBase64(String originStr) {
         Base64.Encoder encoder = Base64.getEncoder();
-        return encoder.encodeToString(originStr.getBytes());
+        return encoder.encodeToString(originStr.getBytes(StandardCharsets.UTF_8));
     }
 
     public static String decodeBase64(String encodeStr) {
         Base64.Decoder decoder = Base64.getDecoder();
-        return new String(decoder.decode(encodeStr));
+        return new String(decoder.decode(encodeStr), StandardCharsets.UTF_8);
     }
 
     public void download(String stepId) {
@@ -391,18 +376,19 @@ public class OesRunner extends CLIRunner{
 
             FilePath aslRootFilePath = new FilePath(getWs(), DOT_OES_STEPS_DIR);
 
-            LOG.printf("--//INFO: start download step(%s) package...%n", stepId);
+            LOG.printf("--//INFO: get step(%s) package...%n", stepId);
             String version = stepRegistry.download(stepId, aslRootFilePath);
-            FilePath runXmlFilePath = new FilePath(aslRootFilePath, String.format("%s/run.xml", stepId));
+            LOG.printf("--//INFO: done step (%s:%s).%n", stepId, version);
+            FilePath runFilePath = new FilePath(aslRootFilePath, String.format("%s/run.xml", stepId));
 
-            if (!runXmlFilePath.exists()) {
-                throw new OesException(String.format("The StepType(%s) is not supported.", stepId));
+            if (!runFilePath.exists()) {
+                throw new OesException(String.format("The step type(%s) is not supported.", stepId));
             }
 
-            LOG.println("--//INFO: download bootstrap package asl ...");
-            stepRegistry.download(Constants.STEP_ASL, aslRootFilePath);
+            LOG.println("--//INFO: get asl(ant-script-library) package ...");
+            String aslVersion = stepRegistry.download(Constants.STEP_ASL, aslRootFilePath);
+            LOG.printf("--//INFO: done asl version: %s.%n", aslVersion);
 
-            LOG.printf("--//INFO: step (%s:%s).%n", stepId, version);
         } catch (Exception e) {
             e.printStackTrace(getLogger());
         }
