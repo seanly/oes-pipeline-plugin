@@ -89,7 +89,9 @@ public class BuildNameParameterDefinition extends SimpleParameterDefinition {
                 continue;
             }
 
-            if (Objects.requireNonNull(run.getResult()).isBetterOrEqualTo(Result.SUCCESS)) {
+            Result result = run.getResult();
+
+            if (result != null && result.isBetterOrEqualTo(Result.SUCCESS)) {
                 buildNames.add(run.getDisplayName());
             }
         }

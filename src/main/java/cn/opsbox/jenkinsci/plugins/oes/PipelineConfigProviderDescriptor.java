@@ -12,6 +12,11 @@ public abstract class PipelineConfigProviderDescriptor
 
     @WithBridgeMethods(List.class)
     public static DescriptorExtensionList<PipelineConfigProvider, PipelineConfigProviderDescriptor> all() {
-        return Jenkins.getInstanceOrNull().getDescriptorList(PipelineConfigProvider.class);
+        Jenkins instance = Jenkins.getInstanceOrNull();
+        if (instance != null) {
+            return instance.getDescriptorList(PipelineConfigProvider.class);
+        } else {
+            return null;
+        }
     }
 }

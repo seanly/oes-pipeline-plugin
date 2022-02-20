@@ -14,6 +14,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 import javax.annotation.CheckForNull;
 import java.io.IOException;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,6 +62,14 @@ public class ApplicationVersionContributor extends BuildWrapper {
             @Override
             public boolean tearDown(AbstractBuild build, BuildListener listener) {
                 return true;
+            }
+
+            @Override
+            public void buildEnvVars(Map<String, String> env) {
+                String appVersion = getVersion(build);
+                if (appVersion != null) {
+                    env.put(ApplicationVersionContributor.VERSION_PARAMETER, appVersion);
+                }
             }
         };
     }

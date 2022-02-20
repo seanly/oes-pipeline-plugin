@@ -11,6 +11,13 @@ public abstract class StepRegistryProviderDescriptor extends Descriptor<StepRegi
 
     @WithBridgeMethods(List.class)
     public static DescriptorExtensionList<StepRegistryProvider, StepRegistryProviderDescriptor> all() {
-        return Jenkins.getInstanceOrNull().getDescriptorList(StepRegistryProvider.class);
+
+        Jenkins instance = Jenkins.getInstanceOrNull();
+
+        if (instance != null) {
+            return instance.getDescriptorList(StepRegistryProvider.class);
+        } else {
+            return null;
+        }
     }
 }
