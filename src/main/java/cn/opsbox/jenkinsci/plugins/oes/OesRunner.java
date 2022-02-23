@@ -28,10 +28,11 @@ import java.util.*;
 
 public class OesRunner extends CLIRunner{
 
-    public static final String DOT_OES_CI_DIR = ".oes-ci";
-    public static final String DOT_OES_STEPS_DIR = ".oes-steps";
 
-    public static final String JENKINS_DOT_PROPS = "jenkins.properties";
+    public static final String DOT_OES_DIR = ".oes";
+    public static final String DOT_OES_CI_DIR = ".oes/ci";
+    public static final String DOT_OES_STEPS_DIR = ".oes/step";
+    public static final String DOT_OES_ENVIRONS_PROPERTIES = ".oes/environs.properties";
 
     private List<MultiBinding.Unbinder> unbinders = new ArrayList<>();
 
@@ -50,12 +51,29 @@ public class OesRunner extends CLIRunner{
     }
 
     @SneakyThrows
-    public boolean runPipeline(FilePath pipelineConfigFile, Map<String, String> paramEnvirons) {
+    public void createDotOesDir() {
+        FilePath dotOesDir = new FilePath(getWs(), DOT_OES_DIR);
+        if (!dotOesDir.exists()) {
+            dotOesDir.mkdirs();
+        }
+    }
+
+    @SneakyThrows
+    public boolean runPipeline(FilePath pipelineConfigFile, String environs) {
 
         Config config = Config.parse(pipelineConfigFile.readToString());
 
-        // save .oes-pipeline.final.yml file.
-        save(config);
+        // save .oes/pipeline.final.yml file.
+        saveConfig(config);
+        saveEnvirons(environs);
+
+        // inject jenkins environs file
+        PropertiesLoader propertiesLoader = new PropertiesLoader();
+        Map<String, String> paramEnvirons = new HashMap<>();
+
+        if (StringUtils.isNotEmpty(environs)) {
+            paramEnvirons = propertiesLoader.getVarsFromPropertiesContent(environs, getEnvvars());
+        }
 
         List<Stage> stages = new ArrayList<>(2);
         if (paramEnvirons.containsKey("_RUN_STAGES")) {
@@ -75,7 +93,7 @@ public class OesRunner extends CLIRunner{
         return runStages(stages, paramEnvirons);
     }
 
-    private void save(Config config) {
+    private void saveConfig(Config config) {
         try {
             Yaml yaml = new Yaml();
             FilePath finalPipelineYmlFile = new FilePath(getWs(), Constants.FINAL_PIPELINE_FILE);
@@ -84,6 +102,16 @@ public class OesRunner extends CLIRunner{
         } catch (IOException | InterruptedException e) {
             e.printStackTrace(getLogger());
         }
+    }
+
+    @SneakyThrows
+    private void saveEnvirons(String environs) {
+        FilePath jenkinsEnvironsFile = new FilePath(getWs(), DOT_OES_ENVIRONS_PROPERTIES);
+        FilePath jenkinsEnvironsDir = jenkinsEnvironsFile.getParent();
+        if (jenkinsEnvironsDir!= null && !jenkinsEnvironsDir.exists()) {
+            jenkinsEnvironsDir.mkdirs();
+        }
+        jenkinsEnvironsFile.write(getEnvvars().expand(environs), "UTF-8");
     }
 
     private Stage getStage(List<Stage> stages, String stageName) {
@@ -180,6 +208,7 @@ public class OesRunner extends CLIRunner{
         return true;
     }
 
+    @SneakyThrows
     public boolean runStep(Step step) {
         download(step.getId());
         return ant(step);
