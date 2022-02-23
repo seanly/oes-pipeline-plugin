@@ -31,7 +31,7 @@ public class OesRunner extends CLIRunner{
 
     public static final String DOT_OES_DIR = ".oes";
     public static final String DOT_OES_CI_DIR = ".oes/ci";
-    public static final String DOT_OES_STEPS_DIR = ".oes/step";
+    public static final String DOT_OES_STEPS_DIR = ".oes/steps";
     public static final String DOT_OES_ENVIRONS_PROPERTIES = ".oes/environs.properties";
 
     private List<MultiBinding.Unbinder> unbinders = new ArrayList<>();
@@ -208,10 +208,13 @@ public class OesRunner extends CLIRunner{
         return true;
     }
 
-    @SneakyThrows
     public boolean runStep(Step step) {
-        download(step.getId());
-        return ant(step);
+        boolean ret = download(step.getId());
+        if (ret) {
+            return ant(step);
+        }
+
+        return false;
     }
 
     private boolean ant(Step step) {
@@ -397,29 +400,32 @@ public class OesRunner extends CLIRunner{
         return new String(decoder.decode(encodeStr), StandardCharsets.UTF_8);
     }
 
-    public void download(String stepId) {
+    public boolean download(String stepId) {
 
         PrintStream LOG = getLogger();
         try {
             StepRegistry stepRegistry = RegistryUtil.getStepRegistry();
 
-            FilePath aslRootFilePath = new FilePath(getWs(), DOT_OES_STEPS_DIR);
-
+            FilePath dotOesStepsDir = new FilePath(getWs(), DOT_OES_STEPS_DIR);
             LOG.printf("--//INFO: get step(%s) package...%n", stepId);
-            String version = stepRegistry.download(stepId, aslRootFilePath);
+            String version = stepRegistry.download(stepId, dotOesStepsDir);
             LOG.printf("--//INFO: done step (%s:%s).%n", stepId, version);
-            FilePath runFilePath = new FilePath(aslRootFilePath, String.format("%s/run.xml", stepId));
+            FilePath runFilePath = new FilePath(dotOesStepsDir, String.format("%s/run.xml", stepId));
 
             if (!runFilePath.exists()) {
-                throw new OesException(String.format("The step type(%s) is not supported.", stepId));
+                LOG.printf("--/ERR: The step type(%s) is not supported.", stepId);
+                return false;
             }
 
             LOG.println("--//INFO: get asl(ant-script-library) package ...");
-            String aslVersion = stepRegistry.download(Constants.STEP_ASL, aslRootFilePath);
+            String aslVersion = stepRegistry.download(Constants.STEP_ASL, dotOesStepsDir);
             LOG.printf("--//INFO: done asl version: %s.%n", aslVersion);
+
+            return true;
 
         } catch (Exception e) {
             e.printStackTrace(getLogger());
+            return false;
         }
     }
 }
