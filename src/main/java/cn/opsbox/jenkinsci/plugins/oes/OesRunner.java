@@ -30,7 +30,7 @@ public class OesRunner extends CLIRunner{
 
 
     public static final String DOT_OES_DIR = ".oes";
-    public static final String DOT_OES_CI_DIR = ".oes/ci";
+    public static final String DOT_OES_CI_DIR = ".oes/run";
     public static final String DOT_OES_STEPS_DIR = ".oes/steps";
     public static final String DOT_OES_ENVIRONS_PROPERTIES = ".oes/environs.properties";
 
