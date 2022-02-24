@@ -16,14 +16,10 @@ import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.HashMap;
-import java.util.Map;
 
 import static cn.opsbox.jenkinsci.plugins.oes.OesPipelineConfigFromWorkspace.DescriptorImpl.DEFAULT_PIPELINE_FILE;
-import static cn.opsbox.jenkinsci.plugins.oes.OesRunner.*;
 
 public class OesPipelineBuilder extends Builder implements SimpleBuildStep {
 

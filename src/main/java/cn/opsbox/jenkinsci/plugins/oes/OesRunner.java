@@ -7,7 +7,10 @@ import cn.opsbox.jenkinsci.plugins.oes.pipeline.Step;
 import cn.opsbox.jenkinsci.plugins.oes.registry.RegistryUtil;
 import cn.opsbox.jenkinsci.plugins.oes.registry.StepRegistry;
 import cn.opsbox.jenkinsci.plugins.oes.util.Constants;
-import hudson.*;
+import hudson.EnvVars;
+import hudson.FilePath;
+import hudson.Launcher;
+import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.model.Run;
@@ -19,7 +22,6 @@ import org.jenkinsci.plugins.credentialsbinding.MultiBinding;
 import org.jenkinsci.plugins.credentialsbinding.impl.*;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -27,7 +29,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class OesRunner extends CLIRunner{
-
 
     public static final String DOT_OES_DIR = ".oes";
     public static final String DOT_OES_CI_DIR = ".oes/run";
@@ -204,16 +205,14 @@ public class OesRunner extends CLIRunner{
                 return false;
             }
         }
-
         return true;
     }
 
     public boolean runStep(Step step) {
-        boolean ret = download(step.getId());
+        boolean ret = download(step);
         if (ret) {
             return ant(step);
         }
-
         return false;
     }
 
@@ -385,7 +384,6 @@ public class OesRunner extends CLIRunner{
         secretsForBuild.remove(getBuild());
     }
 
-
     public static String getCurrentTime() {
         return new SimpleDateFormat("yyyyMMddHHmmss").format(Calendar.getInstance().getTime());
     }
@@ -400,15 +398,15 @@ public class OesRunner extends CLIRunner{
         return new String(decoder.decode(encodeStr), StandardCharsets.UTF_8);
     }
 
-    public boolean download(String stepId) {
-
+    public boolean download(Step step) {
         PrintStream LOG = getLogger();
         try {
             StepRegistry stepRegistry = RegistryUtil.getStepRegistry();
+            String stepId = step.getId();
 
             FilePath dotOesStepsDir = new FilePath(getWs(), DOT_OES_STEPS_DIR);
             LOG.printf("--//INFO: get step(%s) package...%n", stepId);
-            String version = stepRegistry.download(stepId, dotOesStepsDir);
+            String version = stepRegistry.download(step, dotOesStepsDir);
             LOG.printf("--//INFO: done step (%s:%s).%n", stepId, version);
             FilePath runFilePath = new FilePath(dotOesStepsDir, String.format("%s/run.xml", stepId));
 
@@ -418,7 +416,9 @@ public class OesRunner extends CLIRunner{
             }
 
             LOG.println("--//INFO: get asl(ant-script-library) package ...");
-            String aslVersion = stepRegistry.download(Constants.STEP_ASL, dotOesStepsDir);
+
+            Step aslStep = new Step(Constants.STEP_ASL);
+            String aslVersion = stepRegistry.download(aslStep, dotOesStepsDir);
             LOG.printf("--//INFO: done asl version: %s.%n", aslVersion);
 
             return true;

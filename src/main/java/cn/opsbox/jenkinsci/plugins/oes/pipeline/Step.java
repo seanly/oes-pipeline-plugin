@@ -10,15 +10,29 @@ import java.util.Map;
 public class Step {
 
     private String id;
+    private String version = "";
     private Map<String, String> properties = new HashMap<>();
 
-    public Step(String id, Map<String, String> properties) {
-        this.id = id;
+    /**
+     * step name format: xxx/xxx@master
+     * @param name
+     * @param properties
+     */
+    public Step(String name, Map<String, String> properties) {
+        this(name);
         this.properties = properties;
     }
 
-    public Step(String id) {
-        this.id = id;
+    public Step(String name) {
+        this.version = "";
+
+        String[] stepName = name.split("@");
+        if (stepName.length == 2 ) {
+            this.id = stepName[0];
+            this.version = stepName[1];
+        } else {
+            this.id = name;
+        }
     }
 
     @SneakyThrows
