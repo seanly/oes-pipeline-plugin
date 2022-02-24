@@ -1,5 +1,6 @@
 package cn.opsbox.jenkinsci.plugins.oes.registry;
 
+import cn.opsbox.jenkinsci.plugins.oes.pipeline.Step;
 import hudson.FilePath;
 import io.minio.*;
 import io.minio.messages.Item;
@@ -50,24 +51,21 @@ public class OesMinioStepRegistry extends StepRegistry{
         return null;
     }
 
-    @Override
-    public String download(String stepId, FilePath saveTo) {
-        return this.download(stepId,"", saveTo);
-    }
-
     @SneakyThrows
     @Override
-    public String download(String stepId, String version, FilePath saveTo) {
-        super.download(stepId, saveTo);
+    public String download(Step step, FilePath saveTo) {
+        super.download(step, saveTo);
 
-        String currentVersion = version;
-        if (StringUtils.isEmpty(version)) {
-           currentVersion = getStepLatestVersion(stepId);
+        String stepId = step.getId();
+
+        String stepVersion = step.getVersion();
+        if (stepVersion.trim().isEmpty()) {
+           stepVersion = getStepLatestVersion(stepId);
         }
 
-        String packageFileName = String.format("%s-%s.tar.gz", stepId, currentVersion);
+        String packageFileName = String.format("%s-%s.tar.gz", stepId, stepVersion);
         FilePath packageFilePath = new FilePath(saveTo, packageFileName);
-        String packageRemotePath = String.format("%s/%s/%s", getStepPath(stepId), currentVersion, packageFileName);
+        String packageRemotePath = String.format("%s/%s/%s", getStepPath(stepId), stepVersion, packageFileName);
         FilePath packageMd5FilePath = new FilePath(saveTo, String.format("%s.md5", packageFileName));
         String packageMd5RemotePath = String.format("%s.md5", packageRemotePath);
 
@@ -91,7 +89,7 @@ public class OesMinioStepRegistry extends StepRegistry{
 
         FilePath saveToTaskId = new FilePath(saveTo, stepId);
         packageFilePath.untar(saveToTaskId, FilePath.TarCompression.GZIP);
-        return currentVersion;
+        return stepVersion;
     }
 
     boolean isLatestPkg(String latestMd5, FilePath pkgFile) throws IOException, InterruptedException {

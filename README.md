@@ -115,3 +115,28 @@ pipeline {
 }
 
 ```
+
+# gitlab 作为step registry
+
+需要提供默认step/asl库地址，
+
+```yaml
+
+environment:
+  JENKINS: jenkins
+
+pipeline:
+  - oes-step/asl
+  - oes-step/asl
+  - oes-step/asl/docker@master:
+      code: 
+  - name: build
+    steps:
+      - script: 
+          code: |
+            echo "hello, $JENKINS"
+
+  - oes-steps/scripts:/@master:
+      code: |
+        echo "hello, $JENKINS"
+```

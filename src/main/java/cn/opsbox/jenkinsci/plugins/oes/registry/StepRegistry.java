@@ -1,5 +1,6 @@
 package cn.opsbox.jenkinsci.plugins.oes.registry;
 
+import cn.opsbox.jenkinsci.plugins.oes.pipeline.Step;
 import com.github.zafarkhaja.semver.Version;
 import hudson.FilePath;
 import lombok.SneakyThrows;
@@ -19,7 +20,7 @@ public abstract class StepRegistry {
     }
 
     @SneakyThrows
-    public String download(String stepId, FilePath saveTo){
+    public String download(Step step, FilePath saveTo){
         this.checkSaveToDir(saveTo);
         return null;
     }
@@ -60,4 +61,5 @@ public abstract class StepRegistry {
 
         return latestVersion;
     }
+
 }
