@@ -23,8 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static cn.opsbox.jenkinsci.plugins.oes.OesPipelineConfigFromWorkspace.DescriptorImpl.DEFAULT_PIPELINE_FILE;
-import static cn.opsbox.jenkinsci.plugins.oes.OesRunner.DOT_OES_CI_DIR;
-import static cn.opsbox.jenkinsci.plugins.oes.OesRunner.JENKINS_DOT_PROPS;
+import static cn.opsbox.jenkinsci.plugins.oes.OesRunner.*;
 
 public class OesPipelineBuilder extends Builder implements SimpleBuildStep {
 
@@ -78,26 +77,12 @@ public class OesPipelineBuilder extends Builder implements SimpleBuildStep {
             throw new AbortException("configure is empty");
         }
 
-        FilePath jenkinsEnvironsFile = new FilePath(ws, DOT_OES_CI_DIR + File.separator + JENKINS_DOT_PROPS);
-
-        FilePath jenkinsEnvironsDir = jenkinsEnvironsFile.getParent();
-        if (jenkinsEnvironsDir!= null && !jenkinsEnvironsDir.exists()) {
-            jenkinsEnvironsDir.mkdirs();
-        }
         logger.println("--// run oes pipeline...");
-
-        // inject jenkins environs file
-        PropertiesLoader propertiesLoader = new PropertiesLoader();
-        Map<String, String> paramEnvirons = new HashMap<>();
-
-        if (StringUtils.isNotEmpty(environs)) {
-            jenkinsEnvironsFile.write(env.expand(environs), "UTF-8");
-            paramEnvirons = propertiesLoader.getVarsFromPropertiesContent(environs, env);
-        }
 
         OesRunner runner = new OesRunner(run, ws, launcher, listener);
         runner.setEnvvars(env);
-        boolean r = runner.runPipeline(new FilePath(ws, pipelineConfigPath), paramEnvirons);
+        runner.createDotOesDir();
+        boolean r = runner.runPipeline(new FilePath(ws, pipelineConfigPath), environs);
 
         if (r) {
             run.setResult(Result.SUCCESS);

@@ -25,8 +25,6 @@ import java.util.*;
 
 public class OesStepBuilder extends Builder implements SimpleBuildStep {
 
-    public static final String STEPS_DIR = "steps";
-
     @Getter
     private String stepId;
 
@@ -49,6 +47,7 @@ public class OesStepBuilder extends Builder implements SimpleBuildStep {
 
         OesRunner runner = new OesRunner(run, ws, launcher, listener);
         runner.setEnvvars(env);
+        runner.createDotOesDir();
         boolean r = runner.runStep(new Step(stepId, convertStepProperties(env)));
         if (r) {
             run.setResult(Result.SUCCESS);

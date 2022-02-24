@@ -28,10 +28,11 @@ import java.util.*;
 
 public class OesRunner extends CLIRunner{
 
-    public static final String DOT_OES_CI_DIR = ".oes-ci";
-    public static final String DOT_OES_STEPS_DIR = ".oes-steps";
 
-    public static final String JENKINS_DOT_PROPS = "jenkins.properties";
+    public static final String DOT_OES_DIR = ".oes";
+    public static final String DOT_OES_CI_DIR = ".oes/run";
+    public static final String DOT_OES_STEPS_DIR = ".oes/steps";
+    public static final String DOT_OES_ENVIRONS_PROPERTIES = ".oes/environs.properties";
 
     private List<MultiBinding.Unbinder> unbinders = new ArrayList<>();
 
@@ -50,12 +51,29 @@ public class OesRunner extends CLIRunner{
     }
 
     @SneakyThrows
-    public boolean runPipeline(FilePath pipelineConfigFile, Map<String, String> paramEnvirons) {
+    public void createDotOesDir() {
+        FilePath dotOesDir = new FilePath(getWs(), DOT_OES_DIR);
+        if (!dotOesDir.exists()) {
+            dotOesDir.mkdirs();
+        }
+    }
+
+    @SneakyThrows
+    public boolean runPipeline(FilePath pipelineConfigFile, String environs) {
 
         Config config = Config.parse(pipelineConfigFile.readToString());
 
-        // save .oes-pipeline.final.yml file.
-        save(config);
+        // save .oes/pipeline.final.yml file.
+        saveConfig(config);
+        saveEnvirons(environs);
+
+        // inject jenkins environs file
+        PropertiesLoader propertiesLoader = new PropertiesLoader();
+        Map<String, String> paramEnvirons = new HashMap<>();
+
+        if (StringUtils.isNotEmpty(environs)) {
+            paramEnvirons = propertiesLoader.getVarsFromPropertiesContent(environs, getEnvvars());
+        }
 
         List<Stage> stages = new ArrayList<>(2);
         if (paramEnvirons.containsKey("_RUN_STAGES")) {
@@ -75,7 +93,7 @@ public class OesRunner extends CLIRunner{
         return runStages(stages, paramEnvirons);
     }
 
-    private void save(Config config) {
+    private void saveConfig(Config config) {
         try {
             Yaml yaml = new Yaml();
             FilePath finalPipelineYmlFile = new FilePath(getWs(), Constants.FINAL_PIPELINE_FILE);
@@ -84,6 +102,16 @@ public class OesRunner extends CLIRunner{
         } catch (IOException | InterruptedException e) {
             e.printStackTrace(getLogger());
         }
+    }
+
+    @SneakyThrows
+    private void saveEnvirons(String environs) {
+        FilePath jenkinsEnvironsFile = new FilePath(getWs(), DOT_OES_ENVIRONS_PROPERTIES);
+        FilePath jenkinsEnvironsDir = jenkinsEnvironsFile.getParent();
+        if (jenkinsEnvironsDir!= null && !jenkinsEnvironsDir.exists()) {
+            jenkinsEnvironsDir.mkdirs();
+        }
+        jenkinsEnvironsFile.write(getEnvvars().expand(environs), "UTF-8");
     }
 
     private Stage getStage(List<Stage> stages, String stageName) {
@@ -181,8 +209,12 @@ public class OesRunner extends CLIRunner{
     }
 
     public boolean runStep(Step step) {
-        download(step.getId());
-        return ant(step);
+        boolean ret = download(step.getId());
+        if (ret) {
+            return ant(step);
+        }
+
+        return false;
     }
 
     private boolean ant(Step step) {
@@ -368,29 +400,32 @@ public class OesRunner extends CLIRunner{
         return new String(decoder.decode(encodeStr), StandardCharsets.UTF_8);
     }
 
-    public void download(String stepId) {
+    public boolean download(String stepId) {
 
         PrintStream LOG = getLogger();
         try {
             StepRegistry stepRegistry = RegistryUtil.getStepRegistry();
 
-            FilePath aslRootFilePath = new FilePath(getWs(), DOT_OES_STEPS_DIR);
-
+            FilePath dotOesStepsDir = new FilePath(getWs(), DOT_OES_STEPS_DIR);
             LOG.printf("--//INFO: get step(%s) package...%n", stepId);
-            String version = stepRegistry.download(stepId, aslRootFilePath);
+            String version = stepRegistry.download(stepId, dotOesStepsDir);
             LOG.printf("--//INFO: done step (%s:%s).%n", stepId, version);
-            FilePath runFilePath = new FilePath(aslRootFilePath, String.format("%s/run.xml", stepId));
+            FilePath runFilePath = new FilePath(dotOesStepsDir, String.format("%s/run.xml", stepId));
 
             if (!runFilePath.exists()) {
-                throw new OesException(String.format("The step type(%s) is not supported.", stepId));
+                LOG.printf("--/ERR: The step type(%s) is not supported.", stepId);
+                return false;
             }
 
             LOG.println("--//INFO: get asl(ant-script-library) package ...");
-            String aslVersion = stepRegistry.download(Constants.STEP_ASL, aslRootFilePath);
+            String aslVersion = stepRegistry.download(Constants.STEP_ASL, dotOesStepsDir);
             LOG.printf("--//INFO: done asl version: %s.%n", aslVersion);
+
+            return true;
 
         } catch (Exception e) {
             e.printStackTrace(getLogger());
+            return false;
         }
     }
 }
