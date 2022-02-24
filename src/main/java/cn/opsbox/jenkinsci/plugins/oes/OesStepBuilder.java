@@ -23,11 +23,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 import java.io.IOException;
 import java.util.*;
 
-import static cn.opsbox.jenkinsci.plugins.oes.OesRunner.DOT_OES_DIR;
-
 public class OesStepBuilder extends Builder implements SimpleBuildStep {
-
-    public static final String STEPS_DIR = "steps";
 
     @Getter
     private String stepId;
