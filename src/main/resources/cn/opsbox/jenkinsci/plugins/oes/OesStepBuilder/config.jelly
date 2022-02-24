@@ -5,6 +5,10 @@
       <f:select />
   </f:entry>
 
+  <f:entry title="${%Step Version}" field="stepVersion">
+    <f:textbox default="" value="${instance.stepVersion}" />
+  </f:entry>
+
   <f:advanced>
     <f:entry title="${%Step Properties}">
       <f:repeatable add="${%Add Step Property}" field="stepProps" noAddButton="false">

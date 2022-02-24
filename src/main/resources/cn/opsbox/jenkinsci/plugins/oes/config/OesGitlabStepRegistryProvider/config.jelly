@@ -11,7 +11,7 @@
     </f:entry>
 
     <f:entry title="Steps Group" field="stepsGroup" description="Steps Group">
-        <f:textbox default="" value="${instance.stepsGroup}" />
+        <f:textbox default="" value="${instance.stepsGroup}" clazz="required" />
     </f:entry>
 
 </j:jelly>

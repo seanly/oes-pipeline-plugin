@@ -29,11 +29,20 @@ public class OesStepBuilder extends Builder implements SimpleBuildStep {
     private String stepId;
 
     @Getter
+    private String stepVersion;
+
+    @Getter
     private List<OesStepProp> stepProps = new ArrayList<>();
 
     @DataBoundConstructor
     public OesStepBuilder(String stepId) {
         this.stepId = stepId;
+    }
+
+
+    @DataBoundSetter
+    public void setStepVersion(String stepVersion) {
+        this.stepVersion = stepVersion;
     }
 
     @DataBoundSetter
@@ -48,7 +57,10 @@ public class OesStepBuilder extends Builder implements SimpleBuildStep {
         OesRunner runner = new OesRunner(run, ws, launcher, listener);
         runner.setEnvvars(env);
         runner.createDotOesDir();
-        boolean r = runner.runStep(new Step(stepId, convertStepProperties(env)));
+
+        Step step = new Step(stepId, convertStepProperties(env));
+        step.setVersion(stepVersion);
+        boolean r = runner.runStep(step);
         if (r) {
             run.setResult(Result.SUCCESS);
         } else {
