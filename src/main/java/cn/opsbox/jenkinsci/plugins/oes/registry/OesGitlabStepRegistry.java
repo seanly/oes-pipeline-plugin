@@ -55,18 +55,34 @@ public class OesGitlabStepRegistry extends StepRegistry{
 
         String stepId = step.getId();
         String stepVersion = step.getVersion();
-        Project stepProject = gitLabApi.getProjectApi().getProject(stepsGroup, stepId);
+
+        String[] stepName = stepId.split("/");
+
+        String gitlabGroup;
+        String gitlabProject;
+        if (stepName.length == 2) {
+            gitlabGroup = stepName[0];
+            gitlabProject = stepName[1];
+        } else if (stepName.length == 1) {
+            gitlabGroup = stepsGroup;
+            gitlabProject = stepId;
+        } else {
+            throw new OesException("step name format error");
+        }
+
+        Project stepProject = gitLabApi.getProjectApi().getProject(gitlabGroup, gitlabProject);
         if (stepVersion.trim().isEmpty()) {
             stepVersion = stepProject.getDefaultBranch();
         }
-        FilePath stepDir = new FilePath(saveTo, step.getId());
-        stepDir.mkdirs();
-
         InputStream inputStream = gitLabApi.getRepositoryApi().getRepositoryArchive(stepProject, stepVersion
                 , Constants.ArchiveFormat.TAR_GZ);
 
+        FilePath stepDir = new FilePath(saveTo, step.getId());
+        stepDir.mkdirs();
+
         FilePath tmp = new FilePath(saveTo, "archive-tmp");
         tmp.mkdirs();
+
         tmp.untarFrom(inputStream, FilePath.TarCompression.GZIP);
         List<FilePath> dirs = tmp.listDirectories();
         if (dirs.size() == 1) {

@@ -22,6 +22,7 @@ import org.jenkinsci.plugins.credentialsbinding.MultiBinding;
 import org.jenkinsci.plugins.credentialsbinding.impl.*;
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -218,26 +219,32 @@ public class OesRunner extends CLIRunner{
 
     private boolean ant(Step step) {
 
-        String runPropsFileName = String.format("%s-%s.properties", step.getId(), getCurrentTime());
+        String runPropsFileName = String.format("%s.properties", getCurrentTime());
 
-        FilePath dotCIDir = new FilePath(getWs(), DOT_OES_CI_DIR);
-        FilePath dotOesStepsDir = new FilePath(getWs(), DOT_OES_STEPS_DIR);
+        FilePath ws = getWs();
+        FilePath dotCIDir = new FilePath(ws, DOT_OES_CI_DIR);
+        FilePath dotStepDir = new FilePath(dotCIDir, step.getId());
 
         try {
+
+            if (!dotStepDir.exists()) {
+                dotStepDir.mkdirs();
+            }
+
             Properties stepProps = new Properties();
             for(String key: step.getProperties().keySet()) {
                 String value = Util.replaceMacro(step.getProperties().get(key), getEnvvars());
                 stepProps.put(key, value);
             }
 
-            String wsDirProp = getWs().getRemote();
-            FilePath stepPropsFile = new FilePath(dotCIDir, runPropsFileName);
+            FilePath stepPropsFile = new FilePath(dotStepDir, runPropsFileName);
             FilePath stepPropParent = stepPropsFile.getParent();
             if (stepPropParent != null && !stepPropParent.exists()) {
                 stepPropParent.mkdirs();
             }
             stepProps.store(stepPropsFile.write(), "step properties");
 
+            FilePath dotOesStepsDir = new FilePath(getWs(), DOT_OES_STEPS_DIR);
             FilePath aslDir = new FilePath(dotOesStepsDir, Constants.STEP_ASL);
             FilePath stepDir = new FilePath(dotOesStepsDir, step.getId());
 
@@ -254,8 +261,8 @@ public class OesRunner extends CLIRunner{
             // run step/run.xml
             args.add(String.format("%s/run.xml", stepDir.getRemote()));
             args.add(String.format("-Dasl.root=%s", aslDir.getRemote()));
-            args.add(String.format("-Dws.dir=%s", wsDirProp));
-            args.add(String.format("-Dbasedir=%s", wsDirProp));
+            args.add(String.format("-Dws.dir=%s", ws.getRemote()));
+            args.add(String.format("-Dbasedir=%s", ws.getRemote()));
             // add step runtime arguments
             args.add("-propertyfile");
             args.add(stepPropsFile.getRemote());
