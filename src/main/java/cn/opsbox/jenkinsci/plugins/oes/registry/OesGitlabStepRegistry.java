@@ -22,7 +22,7 @@ public class OesGitlabStepRegistry extends StepRegistry{
 
     @Getter
     @Setter
-    private String accessToken;
+    private String accessToken = "";
 
     @Getter
     @Setter

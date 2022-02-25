@@ -17,32 +17,35 @@ public class RegistryUtil {
 
         if (stepRegistryProvider instanceof OesMinioStepRegistryProvider) {
             OesMinioStepRegistryProvider provider = (OesMinioStepRegistryProvider) stepRegistryProvider;
-
             StandardCredentials credentials = provider.getCredentials();
+
+            if (credentials == null) {
+                throw new OesException("minio auth configure error");
+            }
 
             OesMinioStepRegistry registry = new OesMinioStepRegistry(
                     provider.getEndpoint(),
                     ((StandardUsernamePasswordCredentials) credentials).getUsername(),
                     ((StandardUsernamePasswordCredentials) credentials).getPassword().getPlainText()
             );
-
             registry.setBucket(provider.getBucket());
             registry.setArchiveLane(provider.getArchiveLane());
             registry.setArchiveGroup(provider.getArchiveGroup());
-
             stepRegistry = registry;
+
         } else if (stepRegistryProvider instanceof OesGitlabStepRegistryProvider) {
             OesGitlabStepRegistryProvider provider = (OesGitlabStepRegistryProvider) stepRegistryProvider;
-
             StandardCredentials credentials = provider.getCredentials();
+            String accessToken = "";
 
+            if (credentials != null) {
+                accessToken = ((StandardUsernamePasswordCredentials)credentials).getPassword().getPlainText();
+            }
             OesGitlabStepRegistry registry = new OesGitlabStepRegistry(
                     provider.getGitlabUrl(),
-                    ((StandardUsernamePasswordCredentials)credentials).getPassword().getPlainText()
+                    accessToken
             );
-
             registry.setStepsGroup(provider.getStepsGroup());
-
             stepRegistry = registry;
         } else {
             throw new OesException("step registry configure error");
