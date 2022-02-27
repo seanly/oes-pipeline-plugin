@@ -13,6 +13,14 @@ public class Step {
     private String version = "";
     private Map<String, String> properties = new HashMap<>();
 
+    public void setVersion(String version) {
+        if (version == null) {
+            this.version = "";
+        } else {
+            this.version = version;
+        }
+    }
+
     /**
      * step name format: xxx/xxx@master
      * @param name

@@ -29,7 +29,7 @@ public class OesStepBuilder extends Builder implements SimpleBuildStep {
     private String stepId;
 
     @Getter
-    private String stepVersion;
+    private String stepVersion = "";
 
     @Getter
     private List<OesStepProp> stepProps = new ArrayList<>();
