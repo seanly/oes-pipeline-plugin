@@ -9,7 +9,7 @@
     </parent>
     <groupId>cn.opsbox.jenkinsci.plugins</groupId>
     <artifactId>oes-pipeline</artifactId>
-    <version>2.2-SNAPSHOT</version>
+    <version>2.2.0</version>
     <packaging>hpi</packaging>
     <properties>
         <maven.javadoc.skip>true</maven.javadoc.skip>
@@ -255,7 +255,7 @@
                         </manifestEntries>
                     </archive>
                     <maskClasses>com.google.common.</maskClasses>
-                    <minimumJavaVersion/>
+                    <minimumJavaVersion />
                 </configuration>
             </plugin>
         </plugins>
@@ -273,4 +273,8 @@
             <url>https://repo.jenkins-ci.org/public/</url>
         </pluginRepository>
     </pluginRepositories>
+
+  <scm>
+    <tag>oes-pipeline-2.2.0</tag>
+  </scm>
 </project>
