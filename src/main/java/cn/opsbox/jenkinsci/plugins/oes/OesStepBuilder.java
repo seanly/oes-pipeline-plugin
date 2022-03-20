@@ -3,6 +3,7 @@ package cn.opsbox.jenkinsci.plugins.oes;
 import cn.opsbox.jenkinsci.plugins.oes.pipeline.Step;
 import cn.opsbox.jenkinsci.plugins.oes.registry.RegistryUtil;
 import cn.opsbox.jenkinsci.plugins.oes.util.Constants;
+import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import hudson.*;
 import hudson.model.AbstractProject;
 import hudson.model.Result;
@@ -108,6 +109,7 @@ public class OesStepBuilder extends Builder implements SimpleBuildStep {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+                return new StandardListBoxModel().includeEmptyValue();
             }
 
             return items;
