@@ -191,38 +191,31 @@ def purgeBranchString(branch) {
 
 ```
 
-# Extend the task pack provider
+# Extend the step pack provider
 
 Currently, there are two ways to obtain an extension pack
 
-1. Object storage, minio service
-
-![minio-provider.png](docs/images/minio-provider.png)
-
-Configuration to explain:
-  1. Select the extension pack source, Select Minio Server here
-  2. Enter the minio server address
-  3. Enter minio server authentication
-  4. Enter minio server bucket
-  5. Enter archive lane, it is a directory name
-  6. Enter archive Group, It is also a directory name, 
-     But you need to change the directory '/' to a dot,
-     When the configuration is step.id=sample, the default will go to the 
-     '/${archive lane}/${archive group}/${step id}' directory of the bucket 
-     to obtain the extension package under the latest folder in the following version directory,
-     such as: /jenkins/opsbox/jenkins/steps/sample/1.0.0/sample-1.0.0.tar.gz
-
-2. Git warehouse, GitLab service
+## 1. Git warehouse, GitLab service
 
 ![gitlab-provider](docs/images/gitlab-provider.png)
 
 Configuration to explain:
-  1. Select the extension pack source
-  2. Fill in the address of the GitLab type service, such as: jihulab.com
-  3. Obtain the Token in the GitLab service and create usernamePassword credentinal in Jenkins, then select here
-  4. Set the GitLab Group where the built-in extension resides, 
-     When the value of step.id is configured, step=sample, then the repository 
-     under this group will be obtained and downloaded as an extension package.
-     If step.id=opsbox-steps/sample@develop, then the repository 
-     under the group of opsbox-steps will be obtained The develop branch 
-     of the sample as an extension package
+
+1. Select the extension pack source
+2. Fill in the address of the GitLab type service, such as: jihulab.com
+3. Obtain the Token in the GitLab service and create usernamePassword credentinal in Jenkins, then select here
+4. Set the GitLab Group where the built-in extension resides, When the value of `step.id` is configured, `step=sample`, then the repository under this group will be obtained and downloaded as an extension package. If `step.id=opsbox-steps/sample@develop`, then the repository under the group of opsbox-steps will be obtained The develop branch of the sample as an extension package
+
+## 2. Object storage, minio service
+
+![minio-provider.png](docs/images/minio-provider.png)
+
+Configuration to explain:
+
+1. Select the extension pack source, Select Minio Server here
+2. Enter the minio server address
+3. Enter minio server authentication
+4. Enter minio server bucket
+5. Enter archive lane, it is a directory name
+6. Enter archive Group, It is also a directory name,
+   But you need to change the directory `/` to a dot, When the configuration is step.id=sample, the default will go to the `/${archive lane}/${archive group}/${step id}` directory of the bucket to obtain the extension package under the latest folder in the following version directory, such as: `/jenkins/opsbox/jenkins/steps/sample/1.0.0/sample-1.0.0.tar.gz`
