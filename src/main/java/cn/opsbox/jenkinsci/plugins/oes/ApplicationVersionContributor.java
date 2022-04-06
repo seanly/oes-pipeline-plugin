@@ -8,6 +8,7 @@ import hudson.model.BuildListener;
 import hudson.model.CauseAction;
 import hudson.tasks.BuildWrapper;
 import hudson.tasks.BuildWrapperDescriptor;
+import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.tokenmacro.MacroEvaluationException;
 import org.jenkinsci.plugins.tokenmacro.TokenMacro;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -104,6 +105,7 @@ public class ApplicationVersionContributor extends BuildWrapper {
         }
     }
 
+    @Symbol("withApplicationVersion")
     @Extension
     public static class DescriptorImpl extends BuildWrapperDescriptor {
         @Override

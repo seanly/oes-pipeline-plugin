@@ -274,7 +274,4 @@
         </pluginRepository>
     </pluginRepositories>
 
-  <scm>
-    <tag>oes-pipeline-2.2.0</tag>
-  </scm>
 </project>
