@@ -1,13 +1,13 @@
 package cn.opsbox.jenkinsci.plugins.oes;
 
+import hudson.EnvVars;
 import hudson.Extension;
+import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
-import hudson.model.CauseAction;
-import hudson.tasks.BuildWrapper;
+import hudson.model.*;
 import hudson.tasks.BuildWrapperDescriptor;
+import jenkins.tasks.SimpleBuildWrapper;
+import lombok.Getter;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.tokenmacro.MacroEvaluationException;
 import org.jenkinsci.plugins.tokenmacro.TokenMacro;
@@ -15,39 +15,33 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 import javax.annotation.CheckForNull;
 import java.io.IOException;
-import java.util.Map;
+import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ApplicationVersionContributor extends BuildWrapper {
+public class ApplicationVersionContributor extends SimpleBuildWrapper implements Serializable {
 
     public static final String VERSION_PARAMETER = "APP_VERSION";
 
+    @Getter
     private final String versionTemplate;
+    @Getter
     private boolean updateDisplayName;
 
     private static final Logger LOG = Logger.getLogger(ApplicationVersionContributor.class.getName());
 
     @DataBoundConstructor
-    public ApplicationVersionContributor(boolean updateDisplayName, String versionTemplate) {
-        this.updateDisplayName = updateDisplayName;
-        this.versionTemplate = versionTemplate;
-    }
-
-    public String getVersionTemplate() {
-        return versionTemplate;
-    }
-
-    public boolean isUpdateDisplayName() {
-        return updateDisplayName;
+    public ApplicationVersionContributor(boolean show, String tpl) {
+        this.updateDisplayName = show;
+        this.versionTemplate = tpl;
     }
 
     @Override
-    public Environment setUp(AbstractBuild build, Launcher launcher, BuildListener listener)
-            throws IOException, InterruptedException {
+    public void setUp(Context context, Run build, FilePath workspace, Launcher launcher, TaskListener listener,
+                      EnvVars envVars) throws IOException, InterruptedException {
         try {
 
-            String version = TokenMacro.expandAll(build, listener, getVersionTemplate());
+            String version = TokenMacro.expandAll(build, workspace, listener, getVersionTemplate());
             setVersion(build, version);
             listener.getLogger().println("Creating version: " + version);
 
@@ -59,24 +53,14 @@ public class ApplicationVersionContributor extends BuildWrapper {
             listener.getLogger().println("Error creating version: " + e.getMessage());
             LOG.log(Level.WARNING, "Error creating version", e);
         }
-        return new Environment() {
-            @Override
-            public boolean tearDown(AbstractBuild build, BuildListener listener) {
-                return true;
-            }
-
-            @Override
-            public void buildEnvVars(Map<String, String> env) {
-                String appVersion = getVersion(build);
-                if (appVersion != null) {
-                    env.put(ApplicationVersionContributor.VERSION_PARAMETER, appVersion);
-                }
-            }
-        };
+        String appVersion = getVersion(build);
+        if (appVersion != null) {
+            context.env(ApplicationVersionContributor.VERSION_PARAMETER, appVersion);
+        }
     }
 
     @CheckForNull
-    public static String getVersion(AbstractBuild build)  {
+    public static String getVersion(Run<?, ?> build)  {
         ApplicationVersionAction action = build.getAction(ApplicationVersionAction.class);
         if (action != null) {
             return action.getVersion();
@@ -84,7 +68,7 @@ public class ApplicationVersionContributor extends BuildWrapper {
         return null;
     }
 
-    static void setVersion(AbstractBuild build, String version) {
+    static void setVersion(Run<?, ?> build, String version) {
         ApplicationVersionAction action = build.getAction(ApplicationVersionAction.class);
         if (action == null) {
             build.addAction(new ApplicationVersionAction(version));
@@ -105,7 +89,7 @@ public class ApplicationVersionContributor extends BuildWrapper {
         }
     }
 
-    @Symbol("withApplicationVersion")
+    @Symbol("withAppVersion")
     @Extension
     public static class DescriptorImpl extends BuildWrapperDescriptor {
         @Override
