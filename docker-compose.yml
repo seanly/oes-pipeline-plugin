@@ -1,0 +1,7 @@
+version: "3.0"
+
+services:
+  oes-pipeline-plugin:
+    build: 
+      context: ./
+    image: seanly/oes-pipeline-plugin:main
